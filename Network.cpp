@@ -7,17 +7,36 @@ Network::Network()
 }
 Network::Network(char lettre_testee, string nom_fichier, double maximal_distance) :
 	m_firstLayer(0),
+	m_lastLayer(0),
 	m_totalBindingsNumber(0),
 	m_initialized(false),
 	m_gradientInitialized(false),
 	m_maximal_distance(MAXIMAL_DISTANCE),
 	m_maxLimitLoop(MAX_LIMIT_LOOP),
 	m_testedLetter(lettre_testee),
-	m_nameFile(new char[MAX_LENGTH_NAME_FILE])
+	m_nameFile(new char[MAX_LENGTH_NAME_FILE]),
+	m_numberLayer(0)
 {
 	strcpy(m_nameFile, nom_fichier.c_str());
 	m_momentum = ALPHA;
 }
+Network::Network(char lettre_testee, string geometry, string nom_fichier, double maximal_distance) :
+	m_geometry(geometry)
+{
+	Network(lettre_testee, nom_fichier, maximal_distance);
+
+	LayerFirst*		previousLayer(0);
+	istringstream	dim(geometry);
+	int				nb_neurones;
+
+	dim >> m_numberLayer;
+	if (m_numberLayer > 1)
+		cout << "Géométrie invalide, arret de la construction" << endl;
+	else
+		setLayers(dim);
+}
+
+
 
 Network::~Network()
 {
@@ -25,48 +44,45 @@ Network::~Network()
 	delete m_firstLayer;	//supprime TOUTES les couches
 }
 
-void Network::recuperateur()
+bool Network::recuperateur()
 {
 	ifstream	file(m_nameFile);	// On ouvre le fichier
-	int			nbTotalLayer, lengthLayer, i, j;
-	double		weight;
-	char*		pEnd(0);
-	Neuron*		neurone;
-	string		ligne, weight_str, neurone_str;
-	Layer *		layer(getFirstLayer());
+	int			numberLayer;
 
-	file >> nbTotalLayer;											// On lit le nombre total de couches
-	file >> lengthLayer;											// On lit le nombre de neurones de la premiere couche, dont on a pas besoin de récupérer les liasons
-
-	while (getline(file, ligne))									// pour chaque couche
+	file >> numberLayer;
+	if (numberLayer < 2)
 	{
-		istringstream ligne_stream(ligne);							//objet crée pour le traitement de la ligne récupérée
-		i = 0;														// initialisation de l'indice du neurone recevant la liaison sur le couche layer
-		if ( layer->getPreviousLayer() != 0 )						// si on est pas sur la première couche
-
-		{
-			while (getline(ligne_stream, neurone_str, ','))			// pour tout neurone de la couche
-			{
-				j		= 0;										// indice de la liaison arrivant au neurone considéré
-				istringstream neurone_stream(neurone_str);			// objet créé pour le traitement du string récupéré
-				neurone = layer->getNeuron(i);						// neurone considéré
-				while (getline(neurone_stream, weight_str, ' '))	// pour toute liaison arrivant au neurone
-				{
-					if (weight_str.size())							// si ce n'est pas un faux poids vide
-					{
-						weight = strtod(weight_str.c_str(), &pEnd);	//on récupère le poids de la liaison
-						//neurone->getBinding(j)->setWeight(weight);	//on change le poids de la liaison
-						neurone->setWeight(j, weight);
-						j++;
-					}
-				}
-				i++;
-			}
-		}
-		layer = layer->getNextLayer();
-		file >> lengthLayer;// on lit la longueur de la prochaine couche
+		cout << "Géométrie invalide, arret de la récupération" << endl;
+		return false;
 	}
+	m_numberLayer = numberLayer;
+	setLayers(file);
+
+	m_firstLayer->getNextLayer()->setWeight(file);
+	return true;
 }
+
+void Network::setLayers(istream &geometry)
+{
+	int			nb_neurones;
+	LayerFirst* layer;
+
+	delete m_firstLayer;
+
+	geometry >> nb_neurones;
+	m_firstLayer	= new LayerFirst(this, nb_neurones, 0, sigmo );
+	layer			= m_firstLayer;
+
+	for (int i = 0; i < m_numberLayer - 2; ++i)
+	{
+		geometry >> nb_neurones;
+		layer = new LayerHidden(this, nb_neurones, layer, 0, sigmo);
+	}
+
+	geometry >> nb_neurones;
+	m_lastLayer = new LayerLast(this, nb_neurones, layer, sigmo);
+}
+
 void Network::save()
 {
 	// On trouve le nom du fichier
@@ -83,22 +99,10 @@ void Network::save()
 	strcpy(m_nameFile, str_nom_fichier.c_str());
 
 	//on écrit dans le fichier
-	ofstream	file(m_nameFile);					// flux sortant dans le fichier
-	file << getTotalLayerNumber() << ' ';			// on entre le nombre total de couches
-	Layer *		layer(getFirstLayer());				// on initialise la premiere couche
-	file << layer->getSize() << ' ';				// en donnant sa longueur
-	Neuron *	neurone;
-	while (layer->getNextLayer() != 0)				//pour toute couche
-	{
-		layer = layer->getNextLayer();				// on prend la suivante
-		file << endl << layer->getSize() << ' ';	// on donne sa taille
-		for (int i(0); i < layer->getSize(); i++)	// pour tout neurone de la couche
-			file << layer->getNeuron(i)->printWeights() << "'";
-		/*neurone = layer->getNeuron(i);								// on récupère le neurone
-		   for (int j(0); j < neurone->getBindingsNumber(); j++)		// pour toute liaison de la couche précédente vers ce neurone
-		    file << neurone->getBinding(j)->getWeight() << ' ';		// on ajoute au fichier le poids de la liaison
-		   file << ','; */																																																																											//séparateur
-	}
+	ofstream file(m_nameFile);				// flux sortant dans le fichier
+	file << getGeometry() << ' ';			// on entre le nombre total de couches
+
+	getFirstLayer()->getNextLayer()->saveWeight(file);
 
 	// on sauvegarde le dernier fichier enregistré dans mostRecent.txt :
 	string		mostRecent;
@@ -107,40 +111,27 @@ void Network::save()
 	fichier_recent << m_nameFile;
 }
 
-void Network::setFirstLayer(Layer* layer)
+void Network::setFirstLayer(LayerFirst* layer)
 {
 	if (layer)								//Si ce n'est pas un pointeur vide
 		m_firstLayer = layer;
 	else									//si c'est un pointeur vide
-		m_firstLayer = new Layer(this);		// on crée une nouvelle couche
+		m_firstLayer = new LayerFirst();	// on crée une nouvelle couche
 }
 
-Layer* Network::getFirstLayer() const
+LayerFirst* Network::getFirstLayer() const
 {
 	return m_firstLayer;
 }
 
-Layer* Network::getLastLayer() const
+LayerLast* Network::getLastLayer() const
 {
-	Layer* temp = m_firstLayer;	//initialisation à la première couche
-
-	do
-		temp = temp->getNextLayer();											//on parcourt les couches
-	while (temp->getNextLayer() != m_firstLayer && temp->getNextLayer() != 0);	//jusqu'à ce qu'il n'y en ai plus après
-	return temp;																//on retourne la dernière
+	return m_lastLayer;
 }
 
 int Network::getTotalLayerNumber()
 {
-	Layer*	temp	= m_firstLayer;	//initialisation à la première couche
-	int		i		= 0;
-
-	do
-	{
-		temp = temp->getNextLayer();												//on parcourt les couches
-		i++;																		//en incrémentant le compteur
-	} while (temp->getNextLayer() != m_firstLayer && temp->getNextLayer() != 0);	//jusqu'à ce qu'il n'y en ai plus
-	return i;																		// on retourne le compteur
+	return m_numberLayer;
 }
 
 int Network::getFirstLayerSize() const
@@ -148,104 +139,28 @@ int Network::getFirstLayerSize() const
 	return m_firstLayer->getSize();
 }
 
-void Network::initNetwork(double *inputs)
+void Network::getOutput(double* inputs, double outputs[])
 {
-	//on initialise la premiere couche avec les inputs
-	getFirstLayer()->setInput(inputs);
+	// initialisation des entrees
+	getFirstLayer()->resetNeurons(inputs);
 
-	//puis on réinitialise tous les aures neurones du réseau
-	Layer* temp = m_firstLayer;
-	do
-	{
-		temp = temp->getNextLayer();
-		temp->resetNeurons();
-	} while (temp->getNextLayer() != m_firstLayer && temp->getNextLayer() != 0);
-	m_initialized = true;
+	//calcul des sorties
+	getFirstLayer()->getNextLayer()->calculate();
+
+	//maintenant on récupère la sortie dans un tableau
+	for (int i = 0; i < m_lastLayer->getSize(); i++)
+		outputs[i] = m_lastLayer->getNeuron(i)->getOutput();
+
+	m_initialized = false;	//le réseau n'est plus utilisable pour l'instant
 }
 
-void Network::initNetworkGradient(double* expectedOutputs)
+void Network::retropropagation(double* expectedOutputs)
 {
-	//on initialise la dernière couche
-	for (int i = 0; i < getLastLayer()->getSize(); i++)
-		getLastLayer()->getNeuron(i)->initNeuronGradient(expectedOutputs[i]);
-	//dans cette boucle, on parcourt toutes les layer (sauf la dernière), et on met les gradient à zéro
+	getLastLayer()->resetNeuronsGradient(expectedOutputs);	//initialisation des gradients
 
-	Layer*	last	= getLastLayer();
-	Layer*	temp	= last;
-	do
-	{
-		temp = temp->getPreviousLayer();
-		temp->resetNeuronsGradient();
-	} while (temp->getPreviousLayer() != last && temp->getPreviousLayer() != 0);
-	m_gradientInitialized = true;
-}
+	getFirstLayer()->getNextLayer()->calculateGradient();	// calcul par rétropropagation des gradients
 
-bool Network::isALoop() const	//on regarde si le réseau se mord la queue
-{
-	Layer* temp = m_firstLayer;
-
-	do
-		temp = temp->getNextLayer();
-	while (temp != m_firstLayer && temp != 0);
-	if (temp)	//si la dernière couche est la premiere ...
-		return true;
-	else
-		return false;
-}
-
-void Network::launch(double outputs[])
-{
-	if (m_initialized && !isALoop())	//si on est dans le cas normal : le réseau n'est pas une boucle
-	{
-		Layer* temp = m_firstLayer;
-		while (temp->getNextLayer() != 0)
-		{
-			temp = temp->getNextLayer();
-			temp->calculate();
-		}	//lorsque sort, la dernière couche a été stimulée : c'est bon.
-
-		//maintenant on récupère la sortie dans un tableau
-		for (int i = 0; i < temp->getSize(); i++)
-			outputs[i] = temp->getNeuron(i)->getOutput();
-
-		m_initialized = false;	//le réseau n'est plus utilisable pour l'instant
-	}
-}
-
-
-bool Network::launchGradient()
-{
-	if (!m_gradientInitialized)	//on vérifie que le réseau a bien été intialisé
-		return 0;				//pour les gradient
-	if (!isALoop())				//si on est dans le cas normal : le réseau n'est pas une boucle
-	{
-		Layer* temp = getLastLayer();
-		do
-		{
-			temp->calculateGradient();	//on calcule le gradient de la couche d'avant
-			temp = temp->getPreviousLayer();
-		} while (temp != m_firstLayer);	//jusqu'à la première
-		m_gradientInitialized = false;	//le réseau n'est plus utilisable
-										//pour le moment
-		return true;
-	}									//pas de else, flemme de faire le cas de la boucle
-	return 0;
-}
-
-bool Network::learn()
-{
-	launchGradient();
-	if (!isALoop())			//si on est dans le cas normal : le réseau n'est pas une boucle
-	{
-		Layer* temp = m_firstLayer;
-		while (temp != 0)	//on parcourt une par une les couches, on dit à chacune de learn()
-		{
-			temp->learn();
-			temp = temp->getNextLayer();
-		}
-		return true;
-	}
-	return false;
+	getFirstLayer()->getNextLayer()->learn();				// apprentissage
 }
 
 double Network::getMomentum()
@@ -292,15 +207,7 @@ void Network::writeReport(bool resultat, int count, double distance_moyenne, dou
 	strftime(buffer, 80, "%H:%M:%S", timeinfo);
 	base_donnes << buffer << "," << m_testedLetter << "," << getTotalLayerNumber() + 1 << ',';
 
-	//inscription des couches
-	temp = m_firstLayer;
-	do
-	{
-		base_donnes << temp->getSize() << ',';
-		temp = temp->getNextLayer();
-	} while (temp != 0);
-	for (int i(0); i < (4 - (getTotalLayerNumber())); i++)
-		base_donnes << ',';
+	base_donnes << m_geometry << ',';
 
 	//fin de l'inscription des données
 	base_donnes << count << ',' << distance_moyenne << ',' << m_maximal_distance << ',';
@@ -359,8 +266,7 @@ void Network::learnNetwork(const int nbExemples, char** fileArray, double** inpu
 			outputExpected[0] = 0;
 
 		//Calcul de la réponse du réseau
-		initNetwork(inputs[exemple]);	//on initialise avec les valeurs inputs
-		launch(outputExperimental);		//on lance et on récupère les outputs
+		getOutput(inputs[exemple], outputExperimental);
 
 		//Calcul de l'écart
 		if (count < nbExemples * MAX_LIMIT_CASE && false)
@@ -378,8 +284,7 @@ void Network::learnNetwork(const int nbExemples, char** fileArray, double** inpu
 			successes++;
 		else							//sinon c'est un echec et le réseau recalcule les poids des liaisons
 		{
-			initNetworkGradient(outputExpected);
-			learn();
+			retropropagation(outputExpected);
 			successes = 0;	//on réinitialise aussi les nombre de succès enchaînés
 		}
 
@@ -406,8 +311,7 @@ void Network::learnNetwork(const int nbExemples, char** fileArray, double** inpu
 		else
 			outputExpected[0] = 0;
 		//Réponse du réseau
-		initNetwork(inputs[exemple]);
-		launch(outputExperimental);
+		getOutput(inputs[exemple], outputExperimental);
 
 		//Calcul de la distance
 		totalDistance += distance(outputExperimental, outputExpected, LAST_LAYER_SIZE );
@@ -451,6 +355,15 @@ void Network::setMaxLimitLoop(int maxLimitLoop)
 {
 	m_maxLimitLoop = maxLimitLoop;
 }
+
+string Network::getGeometry() const
+{
+	return m_geometry;
+}
+
+
+
+////////////////////////// HORS NETWORK ///////////////////////////////////////
 
 template <class T>
 void displayArray(T* data, int length)	//afficher un tableau de valeur

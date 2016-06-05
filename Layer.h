@@ -6,6 +6,9 @@
 typedef double (*transfert)(double);
 
 class Neuron;	//on va utliser la classe neurone
+class NeuronFirst;
+class NeuronLast;
+class NeuronHidden;
 class Network;	//network
 
 class Layer
@@ -37,10 +40,10 @@ public:
 	Network*		getNetwork() const;
 
 	//! Préparer les neurones à propager
-	void			resetNeurons() const;
+	void			resetNeurons();
 
-	//! Modifier les inputs
-	void			setInput(double *inputs);
+	//! réinitialise le gradient (ne fait rien si c'est une LayerFirst)
+	void			resetNeuronsGradient() const;
 
 protected:
 
@@ -69,6 +72,9 @@ public:
 	//! Destructeur
 	~LayerFirst();
 
+	//! Récupère le neurone i
+	NeuronFirst*	getNeuron(int i) const;
+
 	//! Retourne la couche suivante
 	LayerLast*		getNextLayer() const;
 
@@ -80,6 +86,9 @@ public:
 
 	//! S'agit-il de la couche d'entrée ?
 	virtual bool	isFirst() const;
+
+	//! remet correctement les inputs
+	void			resetNeurons(double* inputs);
 
 protected:
 
@@ -105,6 +114,9 @@ public:
 	//! Destructeur
 	~LayerLast();
 
+	//! Récupère le neurone i
+	NeuronLast*		getNeuron(int i) const;
+
 	//! Retourne la couche precedente
 	LayerFirst*		getPreviousLayer() const;
 
@@ -118,16 +130,22 @@ public:
 	virtual bool	isLast() const;
 
 	//! Demander à chaque neurone de calculer sa sortie
-	void			calculate() const;
+	void			calculate();
 
 	//! Demander à chaque neurone d'envoyer le gradient
-	void			calculateGradient() const;
+	void			calculateGradient();
 
 	//! Dit a chaque neurone de Neuron::learn()
 	bool			learn();
 
 	//! Préparer les neurones à rétropropager
-	void			resetNeuronsGradient() const;
+	void			resetNeuronsGradient(double* expectedOutputs);
+
+	//! Attribuer les facteurs de gradient
+	void			setWeight(istream &file);
+
+	//! Sauvegarder les poids
+	void			saveWeight(ostream &file) const;
 
 protected:
 	//! Couche precedente
@@ -152,11 +170,35 @@ public:
 	//! Destructeur
 	~LayerHidden();
 
+	//! Récupère le neurone i
+	NeuronHidden*	getNeuron(int i) const;
+
 	//! S'agit-il de la couche d'entrée ?
 	virtual bool	isFirst() const;
 
 	//! S'agit-il de la couche d sortie ?
 	virtual bool	isLast() const;
+
+	//! Attribuer les poids
+	void			setWeight(istream &file);
+
+	//! Sauvegarder les poids
+	void			saveWeight(ostream &file) const;
+
+	//! remet à 0 les inputs des neurones
+	void			resetNeurons();
+
+	//! Préparer les neurones à rétropropager
+	void			resetNeuronsGradient();
+
+	//! Demander à chaque neurone de calculer sa sortie
+	void			calculate();
+
+	//! Demander à chaque neurone d'envoyer le gradient
+	void			calculateGradient();
+
+	//! Dit a chaque neurone de Neuron::learn()
+	bool			learn();
 
 protected:
 	//! L'ensemble de ses neurones

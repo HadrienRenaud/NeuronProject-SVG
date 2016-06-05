@@ -43,10 +43,14 @@ Network* Layer::getNetwork() const
 	return m_network;
 }
 
-void Layer::resetNeurons() const
+void Layer::resetNeurons()
 {
 	for (unsigned int i = 0; i < m_neurons.size(); i++)
 		m_neurons[i]->initNeuron();
+}
+
+void Layer::resetNeuronsGradient() const
+{
 }
 
 //////////// LAYER FIRST ///////////////////
@@ -69,8 +73,9 @@ LayerFirst::LayerFirst(Network* network, int neurons, LayerLast* nextLayer, tran
 			//en-dessous dans les fonctions setNextLayer/setPreviousLayer
 		}
 	}
+	if (nextLayer != 0)
+		nextLayer->setPreviousLayer(this);
 	setNextLayer(nextLayer);			//on fait le lien dans les deux sens
-	nextLayer->setPreviousLayer(this);
 	for (int i = 0; i < neurons; ++i)
 	{
 		delete m_neurons[i];
@@ -81,6 +86,11 @@ LayerFirst::LayerFirst(Network* network, int neurons, LayerLast* nextLayer, tran
 LayerFirst::~LayerFirst()
 {
 	delete m_nextLayer;
+}
+
+NeuronFirst* LayerFirst::getNeuron(int i) const
+{
+	return m_neurons[i];
 }
 
 LayerLast* LayerFirst::getNextLayer() const
@@ -96,6 +106,13 @@ bool LayerFirst::setNextLayer(LayerLast* layer)
 	return true;
 }
 
+void LayerFirst::resetNeurons(double* inputs)
+{
+	for (unsigned int i = 0; i < m_neurons.size(); i++)
+		m_neurons[i]->initNeuron(inputs[i]);
+	getNextLayer()->resetNeurons();
+}
+
 ///////// LAYER LAST ///////////////////////
 
 LayerLast::LayerLast() :
@@ -107,8 +124,9 @@ LayerLast::LayerLast(Network* network, int neurons, LayerFirst* previousLayer, t
 	Layer(network, neurons, trsf),
 	m_previousLayer(previousLayer)
 {
+	if (previousLayer != 0)
+		previousLayer->setNextLayer(this);
 	setPreviousLayer(previousLayer);
-	previousLayer->setNextLayer(this);
 	for (int i = 0; i < neurons; ++i)
 	{
 		delete m_neurons[i];
@@ -117,6 +135,11 @@ LayerLast::LayerLast(Network* network, int neurons, LayerFirst* previousLayer, t
 }
 LayerLast::~LayerLast()
 {
+}
+
+NeuronLast* LayerLast::getNeuron(int i) const
+{
+	return m_neurons[i];
 }
 
 LayerFirst* LayerLast::getPreviousLayer() const
@@ -142,7 +165,7 @@ bool LayerLast::isFirst() const
 	return false;
 }
 
-void LayerLast::calculate() const			//propagation normale
+void LayerLast::calculate()				//propagation normale
 {
 	for (unsigned int i = 0; i < m_neurons.size(); i++)
 	{
@@ -152,7 +175,7 @@ void LayerLast::calculate() const			//propagation normale
 	}
 }
 
-void LayerLast::calculateGradient() const			//rétropropasgation du gradient
+void LayerLast::calculateGradient()				//rétropropasgation du gradient
 {
 	for (unsigned int i = 0; i < m_neurons.size(); i++)
 		m_neurons[i]->sendGradient();
@@ -165,10 +188,30 @@ bool LayerLast::learn()
 	return true;
 }
 
-void LayerLast::resetNeuronsGradient() const
+void LayerLast::resetNeuronsGradient(double* expectedOutputs)
 {
 	for (unsigned int i = 0; i < m_neurons.size(); i++)
-		m_neurons[i]->initNeuronGradient(0);
+		m_neurons[i]->initNeuronGradient(expectedOutputs[i]);
+	getPreviousLayer()->resetNeuronsGradient();
+}
+
+void LayerLast::setWeight(istream &file)
+{
+	double weight;
+
+	for (int i = 0; i < getSize(); ++i)
+		for (int j = 0; j < getPreviousLayer()->getSize(); ++j)
+		{
+			file >> weight;
+			getNeuron(i)->setWeight(j, weight);
+		}
+}
+
+void LayerLast::saveWeight(ostream &file) const
+{
+	for (int i = 0; i < getSize(); ++i)
+		for (int j = 0; j < getPreviousLayer()->getSize(); ++j)
+			file << getNeuron(i)->getWeight(j) << " ";
 }
 
 ///////////// LAYER HIDDEN ////////////////////////
@@ -176,15 +219,16 @@ void LayerLast::resetNeuronsGradient() const
 LayerHidden::LayerHidden()
 {
 }
-
 LayerHidden::LayerHidden(Network* network, int neurons, LayerFirst* previousLayer, LayerLast* nextLayer, transfert trsf) :
 	LayerFirst(network, neurons, nextLayer, trsf),
 	LayerLast(network, neurons, previousLayer, trsf)
 {
 	setNextLayer(nextLayer);					//on fait le lien dans les deux sens
 	setPreviousLayer(previousLayer);			//idem
-	nextLayer->setPreviousLayer(this);
-	previousLayer->setNextLayer(this);
+	if (nextLayer != 0)
+		nextLayer->setPreviousLayer(this);
+	if (previousLayer != 0)
+		previousLayer->setNextLayer(this);
 	for (int i = 0; i < neurons; ++i)
 	{
 		delete m_neurons[i];
@@ -196,12 +240,54 @@ LayerHidden::~LayerHidden()
 {
 }
 
-bool Layer::isLast() const
+NeuronHidden* LayerHidden::getNeuron(int i) const
+{
+	return m_neurons[i];
+}
+
+bool LayerHidden::isLast() const
 {
 	return false;
 }
 
-bool Layer::isFirst() const
+bool LayerHidden::isFirst() const
 {
 	return false;
+}
+
+void LayerHidden::setWeight(istream &file)
+{
+	LayerLast::setWeight(file);
+	getNextLayer()->setWeight(file);
+}
+
+void LayerHidden::saveWeight(ostream &file) const
+{
+	LayerLast::saveWeight(file);
+	getNextLayer()->saveWeight(file);
+}
+
+void LayerHidden::resetNeurons()
+{
+	for (unsigned int i = 0; i < m_neurons.size(); i++)
+		m_neurons[i]->initNeuron();
+	getNextLayer()->resetNeurons();
+}
+
+void LayerHidden::calculate()
+{
+	LayerLast::calculate();
+	getNextLayer()->calculate();
+}
+
+void LayerHidden::calculateGradient()
+{
+	getNextLayer()->calculateGradient();
+	LayerLast::calculateGradient();
+}
+
+bool LayerHidden::learn()
+{
+	LayerLast::learn();
+	getNextLayer()->learn();
 }

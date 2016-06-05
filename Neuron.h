@@ -130,10 +130,13 @@ public:
 	void			learn();
 
 	//! Fonction affichant un string avec tous les poids
-	string			printWeights();
+	string			printWeights() const;
 
 	//! Changer le poids i en w
 	void			setWeight(int i, double w);
+
+	//! Retourne le poids de la liaison i
+	double			getWeight(int i) const;
 
 	//! Le neurone récupère la somme pondérée des outputs des neurones des couches d'avant auxquels il est connecte
 	void			receive();
@@ -165,8 +168,11 @@ public:
 	//! Si aucune fonction de transfert n'est donné en paramètre, on prend une sigmoide
 	NeuronHidden(LayerHidden* layer, transfert trsf = 0);
 
-	//! initialise le gradient
+	//! initialise le gradient (= Neuron::initNeuron)
 	bool			initNeuronGradient();
+
+	//! Remet à 0 l'input. (= Neuron::initNeuron)
+	bool			initNeuron();
 
 	//! Premire couche ?
 	virtual bool	isFirst();

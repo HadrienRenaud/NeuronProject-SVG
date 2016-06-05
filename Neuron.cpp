@@ -104,7 +104,8 @@ NeuronFirst::NeuronFirst(LayerFirst* layer, transfert trsf) :
 
 bool NeuronFirst::initNeuron(double input)
 {
-	m_input = input;
+	m_input		= input;
+	m_output	= input;
 	return true;
 }
 
@@ -117,7 +118,6 @@ bool NeuronFirst::isLast()
 {
 	return false;
 }
-
 
 ////////////// NEURON LAST /////////////////
 
@@ -182,7 +182,7 @@ void NeuronLast::learn()	//Le neuron recalcule le poids de toutes ces liaisons a
 		m_weightPrev[i] += ((m_gradient) * MU * (m_neuronsPrev[i]->getOutput()));
 }
 
-string NeuronLast::printWeights()
+string NeuronLast::printWeights() const
 {
 	ostringstream convert;
 
@@ -194,6 +194,11 @@ string NeuronLast::printWeights()
 void NeuronLast::setWeight(int i, double w)
 {
 	m_weightPrev[i] = w;
+}
+
+double NeuronLast::getWeight(int i) const
+{
+	return m_weightPrev[i];
 }
 
 bool NeuronLast::isFirst()
@@ -230,6 +235,11 @@ bool NeuronHidden::isLast()
 bool NeuronHidden::initNeuronGradient()
 {
 	return Neuron::initNeuronGradient();
+}
+
+bool NeuronHidden::initNeuron()
+{
+	return Neuron::initNeuron();
 }
 
 //////////////HORS NEURON////////////////////////////

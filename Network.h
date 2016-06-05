@@ -4,6 +4,9 @@
 #include "config.h"
 
 class Layer;//on dit qu'on va utiliser la classe layer
+class LayerFirst;
+class LayerLast;
+class LayerHidden;
 //! Classe Reseau de neurones
 /*! Contient sa premiere couche, les methodes et tous les parametres necessaire */
 class Network {
@@ -18,49 +21,48 @@ public:
 	   \param maximal_distance initialisation de l'attribut [m_maximal_distance](@maximal_distance)
 	 */
 	Network(char lettre_testee, string nom_fichier = "", double maximal_distance = MAXIMAL_DISTANCE);
+	//! Constructeur initialisateur
+	/*!
+	   initialise tous les attributs :
+	   \param lettre_testee lettre dont s'occupera le reseau
+	   \param nom_fichier string qui servira a stocke le nom du fichier pendant les recuperations, sauvegardes
+	   \param maximal_distance initialisation de l'attribut [m_maximal_distance](@maximal_distance)
+	 */
+	Network(char lettre_testee, string geometry, string nom_fichier = "", double maximal_distance = MAXIMAL_DISTANCE);
 
 	//! Destructeur
 	~Network();
 
 
 	//! Changer la première couche
-	void	setFirstLayer(Layer* layer = 0);
+	void		setFirstLayer(LayerFirst* layer = 0);
 
 	//! Retourne la premiere couche du reseau
-	Layer*	getFirstLayer() const;
+	LayerFirst*	getFirstLayer() const;
 
 	//! Retourne la derniere couche du reseau
-	Layer*	getLastLayer() const;
+	LayerLast*	getLastLayer() const;
 
 	//! Retourne la taille de la premiere couche = taille de l'entree a fournir
-	int		getFirstLayerSize() const;
-
-	//! Initialiser pour la propagation normale
-	void	initNetwork(double* inputs);
-
-	//! Initialiser pour la rétropropagation
-	void	initNetworkGradient(double* expectedOutputs);
+	int			getFirstLayerSize() const;
 
 	//! Nombre de liaisons dans le réseau
-	int		getTotalBindingsNumber() const;
+	int			getTotalBindingsNumber() const;
 
 	//! Nombre de couches dans le réseau
-	int		getTotalLayerNumber();
+	int			getTotalLayerNumber();
 
 	//! Augmenter le nombre de bindings de n (par defaut de 1)
-	void	increaseTotalBindingsNumber(int n = 1);
+	void		increaseTotalBindingsNumber(int n = 1);
 
 	//! Tester si le réseau boucle sur lui mm
-	bool	isALoop() const;
+	bool		isALoop() const;
 
 	//! Lancer la propagation
-	void launch(double output[]);
-
-	//! Lancer la rétropropagation du gradient
-	bool	launchGradient();
+	void getOutput(double* inputs, double output[]);
 
 	//! Algorithme d'apprentissage (tout initialise)
-	bool	learn();
+	void	retropropagation(double* expectedOutputs);
 
 	//! Sauver l'etat du réseau
 	void	save();
@@ -72,8 +74,7 @@ public:
 	double	getMomentum();
 
 	//! Fonction appelée pour récupérer à partir d'un fichier
-	void	recuperateur();
-
+	bool	recuperateur();
 
 	//! Actualise le réseau
 	void	getMostRecent();
@@ -109,11 +110,17 @@ public:
 	//! Fixe le nombre maximal de boucles d'apprentissage a effectuer par le reseau
 	void	setMaxLimitLoop(int maxLimitLoop);
 
+	//! Retourne la geometrie du réseau
+	string	getGeometry() const;
+
 private:
 
 	//! Pointeur vers la premiere couche
 	/*! Seule la premiere couche suffit, le reseau fonctionne comme une liste chainee */
-	Layer* m_firstLayer;
+	LayerFirst* m_firstLayer;
+
+	//! Pointeur vers la derniere couche
+	LayerLast* m_lastLayer;
 
 //! Nombre total de liaison dans le reseau
 	int	m_totalBindingsNumber;
@@ -136,9 +143,17 @@ private:
 //! Lettre testee par le neurone
 	char m_testedLetter;
 
-//! Nom du fichier dans lequel le reseau est sauvegarde/ recupere
+	//! Nom du fichier dans lequel le reseau est sauvegarde/ recupere
 	char* m_nameFile;
 
+	//! Géométrie du réseau
+	string m_geometry;
+
+	//! Nombre de couches du réseau
+	int m_numberLayer;
+
+	//! Fonction créant les couches
+	void setLayers(istream &geometry);
 };
 
 template <class T>
