@@ -12,7 +12,7 @@ class NetworkArray {
 public:
 
 	//! Constructeur : crée les réseaux, et charge les options.
-	NetworkArray(int length_alphabet = LENGTH_ALPHABET);
+	NetworkArray(double* inputs, int length_alphabet = LENGTH_ALPHABET);
 
 	//! Destructeur : détruit les réseaux.
 	~NetworkArray();
@@ -92,6 +92,8 @@ private:
 	int			m_length_alphabet;
 	//! Le moment d'inertie de tous les réseau
 	double		m_momentum;
+	//! Les entrees du réseaux
+	double*		m_inputsList;
 };
 
 //! affichage d'un tableau

@@ -55,7 +55,8 @@ void Network::recuperateur()
 					if (weight_str.size())							// si ce n'est pas un faux poids vide
 					{
 						weight = strtod(weight_str.c_str(), &pEnd);	//on récupère le poids de la liaison
-						neurone->getBinding(j)->setWeight(weight);	//on change le poids de la liaison
+						//neurone->getBinding(j)->setWeight(weight);	//on change le poids de la liaison
+						neurone->setWeight(j, weight);
 						j++;
 					}
 				}
@@ -82,22 +83,21 @@ void Network::save()
 	strcpy(m_nameFile, str_nom_fichier.c_str());
 
 	//on écrit dans le fichier
-	ofstream	file(m_nameFile);										// flux sortant dans le fichier
-	file << getTotalLayerNumber() << ' ';								// on entre le nombre total de couches
-	Layer *		layer(getFirstLayer());									// on initialise la premiere couche
-	file << layer->getSize() << ' ';									// en donnant sa longueur
+	ofstream	file(m_nameFile);					// flux sortant dans le fichier
+	file << getTotalLayerNumber() << ' ';			// on entre le nombre total de couches
+	Layer *		layer(getFirstLayer());				// on initialise la premiere couche
+	file << layer->getSize() << ' ';				// en donnant sa longueur
 	Neuron *	neurone;
-	while (layer->getNextLayer() != 0)									//pour toute couche
+	while (layer->getNextLayer() != 0)				//pour toute couche
 	{
-		layer = layer->getNextLayer();									// on prend la suivante
-		file << endl << layer->getSize() << ' ';						// on donne sa taille
-		for (int i(0); i < layer->getSize(); i++)						// pour tout neurone de la couche
-		{
-			neurone = layer->getNeuron(i);								// on récupère le neurone
-			for (int j(0); j < neurone->getBindingsNumber(); j++)		// pour toute liaison de la couche précédente vers ce neurone
-				file << neurone->getBinding(j)->getWeight() << ' ';		// on ajoute au fichier le poids de la liaison
-			file << ',';												//séparateur
-		}
+		layer = layer->getNextLayer();				// on prend la suivante
+		file << endl << layer->getSize() << ' ';	// on donne sa taille
+		for (int i(0); i < layer->getSize(); i++)	// pour tout neurone de la couche
+			file << layer->getNeuron(i)->printWeights() << "'";
+		/*neurone = layer->getNeuron(i);								// on récupère le neurone
+		   for (int j(0); j < neurone->getBindingsNumber(); j++)		// pour toute liaison de la couche précédente vers ce neurone
+		    file << neurone->getBinding(j)->getWeight() << ' ';		// on ajoute au fichier le poids de la liaison
+		   file << ','; */																																																																											//séparateur
 	}
 
 	// on sauvegarde le dernier fichier enregistré dans mostRecent.txt :
@@ -151,8 +151,7 @@ int Network::getFirstLayerSize() const
 void Network::initNetwork(double *inputs)
 {
 	//on initialise la premiere couche avec les inputs
-	for (int i = 0; i < getFirstLayerSize(); i++)
-		getFirstLayer()->getNeuron(i)->initNeuron(inputs[i]);
+	getFirstLayer()->setInput(inputs);
 
 	//puis on réinitialise tous les aures neurones du réseau
 	Layer* temp = m_firstLayer;

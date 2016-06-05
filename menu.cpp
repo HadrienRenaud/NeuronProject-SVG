@@ -80,11 +80,11 @@ void menu(SDL_Renderer *ren)
 	SDL_RenderPresent(ren);
 
 	length_alphabet = getLenghtAlphabet();
-
+	double			inputList[FIRST_LAYER_SIZE];
 	cout << "Recuperation des reseaux ... " << flush;
-	NetworkArray* tablo_net = new NetworkArray(length_alphabet);
+	NetworkArray*	tablo_net = new NetworkArray(inputList, length_alphabet);
 
-	tablo_net->getMostRecent();
+	//tablo_net->getMostRecent();
 	cout << "Reseaux recuperes." << endl;
 
 	double input[FIRST_LAYER_SIZE];
@@ -268,7 +268,7 @@ void menu(SDL_Renderer *ren)
 			if (!caseLearn.hasBeenPressed())
 			{
 				delete tablo_net;
-				NetworkArray* tablo_net = new NetworkArray;
+				NetworkArray* tablo_net = new NetworkArray(inputList, length_alphabet);
 				tablo_net->learnAllNetworks();
 			}
 			else

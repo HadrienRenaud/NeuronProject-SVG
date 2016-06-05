@@ -1,98 +1,36 @@
 #include "Layer.h"
-#include <iostream>
-#include <stdlib.h>
-#include <ctime>
 
 using namespace std;
 
+///////////// LAYER //////////////////
+
 Layer::Layer() :
-	m_previousLayer(0),
-	m_nextLayer(0),
-	m_bindingsNumber(0)
+	m_size(0)
 {
 }
 
-Layer::Layer(Network* network, int neurons, Layer* previousLayer, Layer* nextLayer, transfert trsf) :
+Layer::Layer(Network* network, int neurons, transfert trsf) :
 	m_network(network),
-	m_bindingsNumber(0)
+	m_size(neurons)
 {
-	/* neurons : nombre de neurones dans la couche */
-	if (network)
-	{
-		if (network->getFirstLayer() == 0)
-		{
-			//cout << "coucou" << endl;
-			network->setFirstLayer(this);	//on vérifie une première fois que la
-			//fisrtlayer du réseau n'ait pas changé, puis une 2nde juste
-			//en-dessous dans les fonctions setNextLayer/setPreviousLayer
-		}
-	}
-	setNextLayer(nextLayer);			//on fait le lien dans les deux sens
-	setPreviousLayer(previousLayer);	//idem
-	for (int i = 0; i < neurons; i++)
-		addNeuron(trsf);				//on ajoute le nombre de neurones demandé
+	for (int i = 0; i < m_size; ++i)
+		m_neurons.push_back(0);
 }
 
-Layer::~Layer()	//destructeur, inintéressant
+Layer::~Layer()			//destructeur, inintéressant
 {
 	for (int i = 0; i < getSize(); i++)
 	{
 		delete m_neurons[i];
 		m_neurons.pop_back();
 	}
-	if (!isLast())
-		delete m_nextLayer;
 }
 
 int Layer::getSize() const
 {
-	return m_neurons.size();
-}													//nombre de neurones
-Layer* Layer::getNextLayer() const
-{
-	return m_nextLayer;
+	return m_size;
 }
-bool Layer::setNextLayer(Layer* layer)
-{
-	m_nextLayer = layer;
-	if (layer)
-	{
-		if (layer->getNetwork() != getNetwork())	//on ne relie pas si les couche
-			return false;							//ne sont pas du mm réseau
-		layer->m_previousLayer = this;
-		if (layer == m_network->getFirstLayer())	//on vérifie que la firstlayer
-			m_network->setFirstLayer(this);			//n'ait pas changé
-		return true;
-	}
-	return false;
-}
-Layer* Layer::getPreviousLayer() const
-{
-	return m_previousLayer;
-}
-bool Layer::setPreviousLayer(Layer* layer)
-{
-	m_previousLayer = layer;
-	if (layer)
-	{
-		if (layer->getNetwork() != getNetwork())	//on ne relie pas si les couche
-			return false;							//ne sont pas du mm réseau
-		layer->m_nextLayer = this;
-		if (this == m_network->getFirstLayer())		//on vérifie que la firstlayer n'ait
-			m_network->setFirstLayer(layer);		//pas changé
-		return true;
-	}
-	return false;
-}
-bool Layer::isLast() const
-{
-	return m_nextLayer == 0;
-}												//ne pas faire confiance à ces
-bool Layer::isFirst() const
-{
-	return m_previousLayer == 0;
-}														//deux fonctions dans le
-//cas d'un réseau bouclé
+
 Neuron* Layer::getNeuron(int n) const
 {
 	if (n >= 0 && n < getSize())
@@ -100,89 +38,170 @@ Neuron* Layer::getNeuron(int n) const
 	return 0;
 }
 
-void Layer::addNeuron(transfert trsf)	//NOUVEAU NEURONE !!!
-{
-	Neuron* neuron = new Neuron(this, trsf);
-	double	weight;
-
-	if (!isLast())		//on établit des liens avec les neurones de la couche d'après
-	{					//que s'ils existent
-		for (int i = 0; i < getNextLayer()->getSize(); i++)
-		{
-			weight	= rand() % 1000;
-			weight	= (weight - 500) / 500;
-			//weight est maintenant un nombre aléatoire entre -1 et 1
-			//std::cout << weight << std::endl;
-			Binding* bdg = new Binding(neuron, weight);
-			getNextLayer()->getNeuron(i)->addBinding(bdg);	//le neuron ajouté à
-			//la couche n aura un tableau de weight de taille égale au nombre de
-			//neurones de la couche n+1
-		}
-	}
-	if (!isFirst())		//on établit des liens avec les neurones de a couche d'avant
-	{					//que s'ils existent
-		for (int i = 0; i < getPreviousLayer()->getSize(); i++)
-		{
-			weight	= rand() % 1000;
-			weight	= (weight - 500) / 500;
-			//weight est maintenant un nombre aléatoire entre -1 et 1
-			//std::cout << weight << std::endl;
-			Binding* bdg = new Binding(getPreviousLayer()->getNeuron(i), weight);
-			neuron->addBinding(bdg);//chaque neurone
-			//de la couche n-1 augmente de 1 la taille de son tableau weight
-		}
-	}
-	m_neurons.push_back(neuron);
-}
-
-void Layer::addNeurons(int n, transfert trsf)
-{
-	for (int i = 0; i < n; i++)
-		addNeuron(trsf);
-}
-
-void Layer::calculate() const	//propagation normale
-{
-	for (unsigned int i = 0; i < m_neurons.size(); i++)
-	{
-		m_neurons[i]->receive();//chauqe neurone va chercher l'output de tous
-		//les neurones de la couche précédente, en faire la somme pondérée par
-		//les poids, puis calculer son propre output avec la fonction de transfert
-	}
-}
-
-void Layer::calculateGradient() const	//rétropropasgation du gradient
-{
-	for (unsigned int i = 0; i < m_neurons.size(); i++)
-		m_neurons[i]->sendGradient();
-}
-
-int Layer::getBindingsNumber() const
-{
-	return m_bindingsNumber;
-}
-
 Network* Layer::getNetwork() const
 {
 	return m_network;
 }
 
+void Layer::resetNeurons() const
+{
+	for (unsigned int i = 0; i < m_neurons.size(); i++)
+		m_neurons[i]->initNeuron();
+}
 
-bool Layer::learn()
+//////////// LAYER FIRST ///////////////////
+
+LayerFirst::LayerFirst() :
+	Layer(),
+	m_nextLayer(0)
+{
+}
+LayerFirst::LayerFirst(Network* network, int neurons, LayerLast* nextLayer, transfert trsf) :
+	Layer(network, neurons, trsf),
+	m_nextLayer(nextLayer)
+{
+	if (network)
+	{
+		if (network->getFirstLayer() == 0)
+		{
+			network->setFirstLayer(this);			//on vérifie une première fois que la
+			//fisrtlayer du réseau n'ait pas changé, puis une 2nde juste
+			//en-dessous dans les fonctions setNextLayer/setPreviousLayer
+		}
+	}
+	setNextLayer(nextLayer);			//on fait le lien dans les deux sens
+	nextLayer->setPreviousLayer(this);
+	for (int i = 0; i < neurons; ++i)
+	{
+		delete m_neurons[i];
+		m_neurons[i] = new NeuronFirst(this, trsf);
+	}
+}
+
+LayerFirst::~LayerFirst()
+{
+	delete m_nextLayer;
+}
+
+LayerLast* LayerFirst::getNextLayer() const
+{
+	return m_nextLayer;
+}
+
+bool LayerFirst::setNextLayer(LayerLast* layer)
+{
+	if (!layer || layer->getNetwork() != getNetwork())
+		return false;
+	m_nextLayer = layer;
+	return true;
+}
+
+///////// LAYER LAST ///////////////////////
+
+LayerLast::LayerLast() :
+	Layer(),
+	m_previousLayer(0)
+{
+}
+LayerLast::LayerLast(Network* network, int neurons, LayerFirst* previousLayer, transfert trsf) :
+	Layer(network, neurons, trsf),
+	m_previousLayer(previousLayer)
+{
+	setPreviousLayer(previousLayer);
+	previousLayer->setNextLayer(this);
+	for (int i = 0; i < neurons; ++i)
+	{
+		delete m_neurons[i];
+		m_neurons[i] = new NeuronLast(this, trsf);
+	}
+}
+LayerLast::~LayerLast()
+{
+}
+
+LayerFirst* LayerLast::getPreviousLayer() const
+{
+	return m_previousLayer;
+}
+
+bool LayerLast::setPreviousLayer(LayerFirst* layer)
+{
+	if (!layer || layer->getNetwork() != getNetwork())
+		return false;
+	m_previousLayer	= layer;
+	return true;
+}
+
+bool LayerLast::isLast() const
+{
+	return true;
+}
+
+bool LayerLast::isFirst() const
+{
+	return false;
+}
+
+void LayerLast::calculate() const			//propagation normale
+{
+	for (unsigned int i = 0; i < m_neurons.size(); i++)
+	{
+		m_neurons[i]->receive();		//chauqe neurone va chercher l'output de tous
+		//les neurones de la couche précédente, en faire la somme pondérée par
+		//les poids, puis calculer son propre output avec la fonction de transfert
+	}
+}
+
+void LayerLast::calculateGradient() const			//rétropropasgation du gradient
+{
+	for (unsigned int i = 0; i < m_neurons.size(); i++)
+		m_neurons[i]->sendGradient();
+}
+
+bool LayerLast::learn()
 {
 	for (int i = 0; i < getSize(); i++)
 		m_neurons[i]->learn();
 	return true;
 }
 
-void Layer::resetNeurons() const
-{
-	for (unsigned int i = 0; i < m_neurons.size(); i++)
-		m_neurons[i]->initNeuron(0);
-}
-
-void Layer::resetNeuronsGradient() const
+void LayerLast::resetNeuronsGradient() const
 {
 	for (unsigned int i = 0; i < m_neurons.size(); i++)
 		m_neurons[i]->initNeuronGradient(0);
+}
+
+///////////// LAYER HIDDEN ////////////////////////
+
+LayerHidden::LayerHidden()
+{
+}
+
+LayerHidden::LayerHidden(Network* network, int neurons, LayerFirst* previousLayer, LayerLast* nextLayer, transfert trsf) :
+	LayerFirst(network, neurons, nextLayer, trsf),
+	LayerLast(network, neurons, previousLayer, trsf)
+{
+	setNextLayer(nextLayer);					//on fait le lien dans les deux sens
+	setPreviousLayer(previousLayer);			//idem
+	nextLayer->setPreviousLayer(this);
+	previousLayer->setNextLayer(this);
+	for (int i = 0; i < neurons; ++i)
+	{
+		delete m_neurons[i];
+		m_neurons[i] = new NeuronHidden(this, trsf);
+	}
+}
+
+LayerHidden::~LayerHidden()
+{
+}
+
+bool Layer::isLast() const
+{
+	return false;
+}
+
+bool Layer::isFirst() const
+{
+	return false;
 }

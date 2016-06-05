@@ -2,22 +2,23 @@
 
 using namespace std;
 
-NetworkArray::NetworkArray(int length_alphabet) :
+NetworkArray::NetworkArray(double* inputs, int length_alphabet) :
 	m_length_alphabet(length_alphabet),
 	m_tablo_net(new Network*[length_alphabet]),
 	m_maximal_distance(MAXIMAL_DISTANCE),
 	m_maxLimitLoop(MAX_LIMIT_LOOP * NB_LEARNING),
-	m_momentum(ALPHA)
+	m_momentum(ALPHA),
+	m_inputsList(inputs)
 {
 	cout << "Creation des reseaux ... " << flush;
 	for (int i = 0; i < m_length_alphabet; ++i)
 	{
-		m_tablo_net[i] = new Network(CHARS[i]);									//Le réseau
+		m_tablo_net[i] = new Network(CHARS[i]);												//Le réseau
 		//Layer* l = new Layer(adresse du réseau, nombre de neurones dans la couche, adresse de la couche précédente, adresse de la couche suivante, fonction de transfert des neuronres de la couche);
-		Layer*	l1		= new Layer(m_tablo_net[i], FIRST_LAYER_SIZE,  0,  0);	//première couche
-		Layer*	l2		= new Layer(m_tablo_net[i], 100, l1, 0);				//seconde
-		Layer*	l3		= new Layer(m_tablo_net[i], 10, l2, 0);					//troisieme
-		Layer*	lend	= new Layer(m_tablo_net[i], LAST_LAYER_SIZE, l3, 0);	//couche de fin
+		Layer*	l1		= new Layer(m_tablo_net[i], FIRST_LAYER_SIZE, 0, 0, m_inputsList);	//première couche
+		Layer*	l2		= new Layer(m_tablo_net[i], 100, l1, 0);							//seconde
+		Layer*	l3		= new Layer(m_tablo_net[i], 10, l2, 0);								//troisieme
+		Layer*	lend	= new Layer(m_tablo_net[i], LAST_LAYER_SIZE, l3, 0);				//couche de fin
 	}
 	cout << "Reseaux crees !" << endl;
 }

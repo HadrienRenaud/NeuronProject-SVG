@@ -5,23 +5,27 @@
 
 #include "config.h"
 
+using namespace std;
+
 //! pointeur de fonction
 /*! On défini un format de pointeur de fonction, on l'invoquera avec le mot transfert
     Ce format est destiné à contenir les fonctions de transfert des neurones */
 typedef double (*transfert)(double);
 
-class Binding;	//on indique que l'on va se servir de la class Binding
 class Layer;	//idem
+class LayerHidden;
+class LayerFirst;
+class LayerLast;
 
-//! Classe represantant un neurone
-class Neuron {
-
+class Neuron
+{
 public:
-	//!constructeur par défaut, contructeur de copie et constructeur que l'on utilise vraiment dans le programme
+
+	//! Constructeur par défaut
 	Neuron();
 
 	//! Le constructeur de copie, associe à la copie : la meme fonction de transfert, la meme couche et les memes liaisons vers les memes neurones,
-	Neuron(const Neuron& neuron);
+	//Neuron(const Neuron& neuron);
 
 	//! Si aucune fonction de transfert n'est donné en paramètre, on prend une sigmoide
 	Neuron(Layer* layer, transfert trsf = 0);
@@ -29,65 +33,40 @@ public:
 	//! Destructeur
 	~Neuron();
 
-//METHODES
-
 	//! Changer la fonction de transfert
 	void setTransfert(double (*)(double));
 
 	//! Retourne la fonction de transfert
-	transfert	getTransfert() const;
+	transfert		getTransfert() const;
 
 	//! Retourne la couche parente du neurone
-	Layer*		getLayer() const;
-
-	//! Donne le nombre de liaisons avec les neurones des couches PRECEDENTES
-	int			getBindingsNumber() const;
-
-	//! Le neurone récupère la somme pondérée des outputs des neurones des couches d'avant auxquels il est connecte
-	void		receive();
-
-	//! Le neurone envoie son propre gradient aux neurones précedents, pondérée par le poids de chaque liaison
-	void		sendGradient();
-	//! nouvelle liaison
-	/*!
-	    \param binding ajoute binding à [m_bindings](@m_bindings)
-	 */
-	void		addBinding(Binding* binding);
-	//! nouvelle liaison
-	/*!
-	    \param binding ajoute binding à [m_bindings](@m_bindings)
-	 */
-	void		addBinding(Neuron* neuron, double weight = 1);
+	Layer*			getLayer() const;
 
 	//! Retourne l'entree du neurone
-	double		getInput() const;
+	double			getInput() const;
 
 	//! Retourne la sortie du neurone
-	double		getOutput() const;
+	double			getOutput() const;
 
 	//! Retourne le gradient du neurone
-	double		getGradient() const;
+	double			getGradient() const;
+
+	//! Change le gradient du neurone
+	void			setGradient(double grad);
+
 	//! Remet à 0 l'input.
-	/*!
-	   Si le neuron est dans la première couche du réseau, input est pris en compte.
-	 */
-	bool		initNeuron(double input);
+	bool			initNeuron();
+
 	//! Remet à zero l'output.
-	/*!
-	    Si le réseau est dans la dernière couche, assignation de expectedOutput est autorisée
-	 */
-	bool		initNeuronGradient(double expectedOutput);
+	bool			initNeuronGradient();
 
-	//! Récupérer la liaison d'indice n
-	Binding*	getBinding(int n);
+	//! Premire couche ?
+	virtual bool	isFirst() = 0;
 
-	//! Connaître la position du neuron dans sa couche
-	int			getIndexInLayer() const;
+	//! Dernière couche ?
+	virtual bool	isLast() = 0;
 
-	//! Algorithme d'apprentissage
-	void		learn();
-
-private:
+protected:
 
 	//! Somme pondérée des entrées
 	double m_input;
@@ -101,14 +80,100 @@ private:
 	//! Couche à laquelle il appartient
 	Layer* m_layer;
 
-	//! L'ensemble des liaisons (neurones sources, et non successeurs)
-	std::vector<Binding*> m_bindings;
-
-	//! Position du neuron dans sa couche
-	int	m_indexInLayer;
-
 	//! Gradient du neurone
 	double m_gradient;
+};
+
+class NeuronFirst :
+	public Neuron
+{
+public:
+	//! Constructeur par défaut
+	NeuronFirst();
+
+	//! Constructeur réellement utilisé
+	NeuronFirst(LayerFirst* layer, transfert trsf);
+
+	//! Recharger les neurones
+	bool			initNeuron(double input);
+
+	//! Premire couche ?
+	virtual bool	isFirst();
+
+	//! Dernière couche ?
+	virtual bool	isLast();
+};
+
+class NeuronLast :
+	public Neuron
+{
+public:
+	//! Constructeur par défaut
+	NeuronLast();
+
+	//! Constructeur réellement utilisé
+	NeuronLast(LayerLast* layer, transfert trsf);
+
+	//! Premire couche ?
+	virtual bool	isFirst();
+
+	//! Dernière couche ?
+	virtual bool	isLast();
+
+	//! Donne le nombre de liaisons avec les neurones des couches PRECEDENTES
+	int				getBindingsNumber() const;
+
+	//! Le neurone envoie son propre gradient aux neurones précedents, pondérée par le poids de chaque liaison
+	void			sendGradient();
+
+	//! Algorithme d'apprentissage
+	void			learn();
+
+	//! Fonction affichant un string avec tous les poids
+	string			printWeights();
+
+	//! Changer le poids i en w
+	void			setWeight(int i, double w);
+
+	//! Le neurone récupère la somme pondérée des outputs des neurones des couches d'avant auxquels il est connecte
+	void			receive();
+
+	//! initialise le gradient
+	bool			initNeuronGradient(double expectedOutput);
+
+protected:
+
+	//! L'ensemble des Neurones de la couche précédente (neurones sources, et non successeurs)
+	std::vector<Neuron*> m_neuronsPrev;
+
+	//! Nombre de liaisons avec la couche précédente
+	const int m_bindingsNumber;
+
+	//! Poids des liaisons avec les neurones de la couche précédente
+	double* m_weightPrev;
+
+
+};
+
+class NeuronHidden :
+	public NeuronLast
+{
+public:
+	//! Constructeur par défaut
+	NeuronHidden();
+
+	//! Si aucune fonction de transfert n'est donné en paramètre, on prend une sigmoide
+	NeuronHidden(LayerHidden* layer, transfert trsf = 0);
+
+	//! initialise le gradient
+	bool			initNeuronGradient();
+
+	//! Premire couche ?
+	virtual bool	isFirst();
+
+	//! Dernière couche ?
+	virtual bool	isLast();
+
 };
 
 //2 couples (fonction,dérivée)

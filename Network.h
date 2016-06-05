@@ -138,6 +138,7 @@ private:
 
 //! Nom du fichier dans lequel le reseau est sauvegarde/ recupere
 	char* m_nameFile;
+
 };
 
 template <class T>

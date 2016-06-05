@@ -8,104 +8,160 @@ typedef double (*transfert)(double);
 class Neuron;	//on va utliser la classe neurone
 class Network;	//network
 
-//! Classe représentant une couche du reseau
-/*!
-   classe stockant les reseaux de la couche, ayant des methodes generales sur l'ensemble des neurones de la couche
- */
-class Layer {
+class Layer
+{
 
 public:
 	//! Constructeur par défaut (vide)
 	Layer();
 
-	//! Constructeur utilisé
-	/*!
-	    initialise la couche precedente, la couche suivante, et les neurones qu'il y a dedans.
-	    \param network le reseau dans lequel est la couche
-	    \param neurons le nombre de neurones de la couche
-	    \param previousLayer la couche precedente
-	    \param nextLayer la couche suivante
-	    \param trsf pointeur de type [transfert](@transfert) vers la fonction de transfert de chacun des neurones
-	 */
-	Layer(Network* network, int neurons = 0,  Layer* previousLayer = 0, Layer* nextLayer = 0, transfert trsf = 0);
+	//! Vrai constructeur
+	Layer(Network* network, int neurons = 0, transfert trsf = 0);
 
-	//! destructeur
+	//! Destructeur
 	~Layer();
 
 	//! nombre de neurones dans la couche
-	int		getSize() const;
-
-	//! Retourne la couche suivante
-	Layer*	getNextLayer() const;
-
-	//! Fixe la couche suivante
-	bool	setNextLayer(Layer* layer);
-
-	//! Retourne la couche precedente
-	Layer*	getPreviousLayer() const;
-
-	//! Fixe la couche precedente
-	bool	setPreviousLayer(Layer* layer);
+	int				getSize() const;
 
 	//! S'agit-il de la couche d'entrée ?
-	bool	isFirst() const;
+	virtual bool	isFirst() const = 0;
 
-	//! S'agit-il de la couche d sortie ?
-	bool	isLast() const;
+	//! S'agit-il de la couche de sortie ?
+	virtual bool	isLast() const = 0;
 
 	//! On récupère le n-ième neurone
-	Neuron*	getNeuron(int n) const;
-
-	//! Ajouter un neurone dont on spécifie (ou pas) la fonction de transfert
-	/*!
-	    \param trsf (optional)  pointeur de type [transfert](@transfert) vers la fonction de transfert du neurone
-	 */
-	void addNeuron(transfert trsf = 0);
-
-	//! Ajouter plusieurs neurones
-	/*!
-	    \param n nombre de neurones a ajouter
-	    \param trsf (optional)  pointeur de type [transfert](@transfert) vers la fonction de transfert du neurone
-	 */
-	void		addNeurons(int n, transfert trsf = 0);
-
-	//! Demander à chaque neurone de calculer sa sortie
-	void		calculate() const;
-
-	//! Demander à chaque neurone d'envoyer le gradient
-	void		calculateGradient() const;
-
-	//! Renvoi le nombre de liaisons partant de cette couche
-	int			getBindingsNumber() const;
+	Neuron*			getNeuron(int n) const;
 
 	//! Réseau parent
-	Network*	getNetwork() const;
-
-	//! Dit a chaque neurone de Neuron::learn()
-	bool		learn();
+	Network*		getNetwork() const;
 
 	//! Préparer les neurones à propager
-	void		resetNeurons() const;
+	void			resetNeurons() const;
 
-	//! Préparer les neurones à rétropropager
-	void		resetNeuronsGradient() const;
+	//! Modifier les inputs
+	void			setInput(double *inputs);
 
-private:
+protected:
 
 	//! Le réseau auquel la couche appartient
 	Network* m_network;
 
+	//! La taille de la couche
+	const int m_size;
+
 	//! L'ensemble de ses neurones
 	std::vector<Neuron*> m_neurons;
+};
 
-	//! Couche precedente
-	Layer* m_previousLayer;
+class LayerLast;
+
+class LayerFirst :
+	public Layer
+{
+public:
+	//! Constructeur par défaut
+	LayerFirst();
+
+	//! Constructeur réellement utilisé
+	LayerFirst(Network* network, int neurons, LayerLast* nextLayer, transfert trsf);
+
+	//! Destructeur
+	~LayerFirst();
+
+	//! Retourne la couche suivante
+	LayerLast*		getNextLayer() const;
+
+	//! Fixe la couche suivante
+	bool			setNextLayer(LayerLast* layer);
+
+	//! S'agit-il de la couche de sortie ?
+	virtual bool	isLast() const;
+
+	//! S'agit-il de la couche d'entrée ?
+	virtual bool	isFirst() const;
+
+protected:
 
 	//! Couche suivante
-	Layer* m_nextLayer;
+	LayerLast* m_nextLayer;
 
-	//! nombre de [Bindings](@Bindings), s'incrémente à chaque nouvelle liaison
-	int	m_bindingsNumber;
+	//! L'ensemble de ses neurones
+	std::vector<NeuronFirst*> m_neurons;
+
+};
+
+class LayerLast :
+	public Layer
+{
+public:
+
+	//! Constructeur par défaut
+	LayerLast();
+
+	//! Constructeur réellement utilisé
+	LayerLast(Network* network, int neurons, LayerFirst* previousLayer, transfert trsf);
+
+	//! Destructeur
+	~LayerLast();
+
+	//! Retourne la couche precedente
+	LayerFirst*		getPreviousLayer() const;
+
+	//! Fixe la couche precedente
+	bool			setPreviousLayer(LayerFirst* layer);
+
+	//! S'agit-il de la couche d'entrée ?
+	virtual bool	isFirst() const;
+
+	//! S'agit-il de la couche d sortie ?
+	virtual bool	isLast() const;
+
+	//! Demander à chaque neurone de calculer sa sortie
+	void			calculate() const;
+
+	//! Demander à chaque neurone d'envoyer le gradient
+	void			calculateGradient() const;
+
+	//! Dit a chaque neurone de Neuron::learn()
+	bool			learn();
+
+	//! Préparer les neurones à rétropropager
+	void			resetNeuronsGradient() const;
+
+protected:
+	//! Couche precedente
+	LayerFirst* m_previousLayer;
+
+	//! L'ensemble de ses neurones
+	std::vector<NeuronLast*> m_neurons;
+
+};
+
+class LayerHidden :
+	public LayerLast,
+	public LayerFirst
+{
+public:
+	//! constructeur par défaut
+	LayerHidden();
+
+	//! constructeur réellement utilisé
+	LayerHidden(Network* network, int neurons, LayerFirst* previousLayer, LayerLast* nextLayer, transfert trsf);
+
+	//! Destructeur
+	~LayerHidden();
+
+	//! S'agit-il de la couche d'entrée ?
+	virtual bool	isFirst() const;
+
+	//! S'agit-il de la couche d sortie ?
+	virtual bool	isLast() const;
+
+protected:
+	//! L'ensemble de ses neurones
+	std::vector<NeuronHidden*> m_neurons;
+
 };
 
 #endif
