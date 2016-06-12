@@ -3,8 +3,10 @@
 
 #include "config.h"
 
+using namespace std;
+
 void	menu(SDL_Renderer *ren);
 void	keyboard(SDL_Event event, bool* keyboardInput);
-int		getLenghtAlphabet();
+void	getOptions(int* length_alphabet, string* geometry);
 
 #endif	// MENU_H_INCLUDED

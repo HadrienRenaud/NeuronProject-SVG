@@ -35,11 +35,6 @@ Neuron::Neuron(Layer* layer, transfert trsf) :
 
 Neuron::~Neuron()	//destructeur, inintéressant
 {
-	//for (int i = 0; i < (int)m_bindings.size(); i++)
-	//{
-	//	delete m_bindings[i];
-	//	m_bindings.pop_back();
-	//}
 }
 
 void Neuron::setTransfert(double (*trsf)(double))
@@ -64,6 +59,7 @@ double Neuron::getInput() const
 
 double Neuron::getOutput() const
 {
+	// std::cout << m_output << "\n";
 	return m_output;
 }
 
@@ -75,6 +71,11 @@ double Neuron::getGradient() const
 void Neuron::setGradient(double grad)
 {
 	m_gradient = grad;
+}
+
+void Neuron::addGradient(double grad)
+{
+	setGradient(grad + getGradient());
 }
 
 bool Neuron::initNeuron()	//on autorise de regler l'input si et seulement si il s'agit d'un neurone de la première couche
@@ -101,6 +102,9 @@ NeuronFirst::NeuronFirst(LayerFirst* layer, transfert trsf) :
 {
 }
 
+NeuronFirst::~NeuronFirst()
+{
+}
 
 bool NeuronFirst::initNeuron(double input)
 {
@@ -126,32 +130,27 @@ NeuronLast::NeuronLast() :
 	m_bindingsNumber(0)
 {
 }
-/*NeuronLast::NeuronLast(const NeuronLast& neuron) :
-    Neuron(neuron),
-    m_neuronsPrev(neuron.m_neuronsPrev),
-    m_weightPrev(neuron.m_weightPrev),
-    m_bindingsNumber(neuron.m_bindingsNumber)
-   {
-   }*/
 NeuronLast::NeuronLast(LayerLast* layer, transfert trsf) :
 	Neuron(layer, trsf),
-	m_bindingsNumber(layer->getPreviousLayer()->getSize())
+	m_bindingsNumber(layer->getPreviousLayer()->getSize()),
+	m_weightPrev({}),
+	m_neuronsPrev({})
 {
-	Neuron*	m_neuronsPrev[m_bindingsNumber];
-	double	m_weightPrev[m_bindingsNumber];
-
 	for (int i = 0; i < m_bindingsNumber; ++i)
 	{
-		m_neuronsPrev[i]	= layer->getPreviousLayer()->getNeuron(i);
-		m_weightPrev[i]		= (rand() % 1000 - 500 ) / 500;
+		m_neuronsPrev.push_back(layer->getPreviousLayer()->getNeuron(i));
+		m_weightPrev.push_back((rand() % 1000 - 500 ) / 500);
 	}
 }	//utlisé lors de la création d'une couche, il ne faut pas invoquer ce constructeur lorsque'on veut ajouter un neurone à une couche après avoir créé la couche
 //il faut utiliser la fonction addNeuron() sur la couche concernée.
 
+NeuronLast::~NeuronLast()
+{
+}
 
 bool NeuronLast::initNeuronGradient(double expectedOutput)
 {
-	m_gradient = /* 2 * */ sigmo1(m_input) * (expectedOutput - m_output);	//le x2 est dans la poly mais pas sur wiki
+	m_gradient = 2 * sigmo1(m_input) * (expectedOutput - m_output);	//le x2 est dans la poly mais pas sur wiki
 	return true;
 }
 
@@ -163,8 +162,10 @@ int NeuronLast::getBindingsNumber() const
 
 void NeuronLast::receive()	//le neurone calcule son input en récupérant la somme pondérée de neurones d'avant
 {
-	for (int i = 0; i < m_bindingsNumber; i++)
+	for (int i = 0; i < getBindingsNumber(); i++)
+	{
 		m_input += (m_neuronsPrev[i]->getOutput()) * m_weightPrev[i];
+	}
 	//enfin, calcul de l'output avec la fonction de transfert
 	m_output = m_trsf(m_input);
 }
@@ -172,7 +173,7 @@ void NeuronLast::receive()	//le neurone calcule son input en récupérant la som
 void NeuronLast::sendGradient()	//rétrop propager le gradient aux neurones des couches d'avant
 {
 	for (int i = 0; i < m_bindingsNumber; i++)
-		m_neuronsPrev[i]->setGradient(m_gradient * m_weightPrev[i] /*trsf[1]*/ * sigmo1(m_neuronsPrev[i]->getInput()));
+		m_neuronsPrev[i]->addGradient(m_gradient * m_weightPrev[i] * sigmo1(getInput()));
 	// gradien_du_neurone_précédent+=(gradient_actuel*pods_de_la_liaison*dérivée_de_sigmo_en(m_input));
 }
 
@@ -217,8 +218,12 @@ NeuronHidden::NeuronHidden() :
 	NeuronLast()
 {
 }
-NeuronHidden::NeuronHidden(LayerHidden* layer, transfert trsf) :
+NeuronHidden::NeuronHidden(LayerHidden* layer, transfert trsf):
 	NeuronLast(layer, trsf)
+{
+}
+
+NeuronHidden::~NeuronHidden()
 {
 }
 
@@ -256,11 +261,7 @@ double threshold1(double input)	//dérivée de threshold
 
 inline double sigmo(double input)
 {
-	double result((exp(PENTE * input) - 1) / (exp(PENTE * input) + 1));
-
-	if (result != result)
-		cout << "sigmo probleme avec input = " << input << endl;
-	return result;
+	return ((exp(PENTE * input) - 1) / (exp(PENTE * input) + 1));
 }
 inline double sigmo1(double input)	//dérivée de sigmo
 {

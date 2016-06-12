@@ -205,10 +205,10 @@ void setPixel(SDL_Surface *surface, int x, int y, Uint32 pixel)
 	/*nbOctetsParPixel représente le nombre d'octets utilisés pour stocker un pixel.
 	   En multipliant ce nombre d'octets par 8 (un octet = 8 bits), on obtient la profondeur de couleur
 	   de l'image : 8, 16, 24 ou 32 bits.*/
-	int nbOctetsParPixel = surface->format->BytesPerPixel;
+	int		nbOctetsParPixel	= surface->format->BytesPerPixel;
 	/*Ici p est l'adresse du pixel que l'on veut modifier*/
 	/*surface->pixels contient l'adresse du premier pixel de l'image*/
-	Uint8 *p = (Uint8*)surface->pixels + y * surface->pitch + x * nbOctetsParPixel;
+	Uint8 * p					= (Uint8*)surface->pixels + y * surface->pitch + x * nbOctetsParPixel;
 
 	/*Gestion différente suivant le nombre d'octets par pixel de l'image*/
 	switch (nbOctetsParPixel) {
@@ -414,7 +414,7 @@ void analysePixel(SDL_Surface *image, int **pixelsR, int **pixelsG, int **pixels
 		for (int x = 0; x < image->w; x++)
 		{
 			//On récupère les infos d'un pixel dans infopixel puis ses composantes dans red, green, blue
-			infopixel = getPixel(image, x, y);
+			infopixel		= getPixel(image, x, y);
 			SDL_GetRGB(infopixel, image->format, &red, &green, &blue);
 			//On place le tout dans les tableaux correspondants
 			pixelsR[y][x]	= (int)red;

@@ -31,7 +31,7 @@ public:
 	Neuron(Layer* layer, transfert trsf = 0);
 
 	//! Destructeur
-	~Neuron();
+	virtual ~Neuron();
 
 	//! Changer la fonction de transfert
 	void setTransfert(double (*)(double));
@@ -54,34 +54,37 @@ public:
 	//! Change le gradient du neurone
 	void			setGradient(double grad);
 
+	//! idem, mais en additionnant
+	void addGradient(double grad);
+
 	//! Remet à 0 l'input.
-	bool			initNeuron();
+	virtual bool	initNeuron();
 
 	//! Remet à zero l'output.
-	bool			initNeuronGradient();
+	virtual bool	initNeuronGradient();
 
 	//! Premire couche ?
-	virtual bool	isFirst() = 0;
+	virtual bool	isFirst()	= 0;
 
 	//! Dernière couche ?
-	virtual bool	isLast() = 0;
+	virtual bool	isLast()	= 0;
 
 protected:
 
 	//! Somme pondérée des entrées
-	double m_input;
+	double		m_input;
 
 	//! Sortie = transfert(m_input)
-	double m_output;
+	double		m_output;
 
 	//! Fonction de transfert du neuron
-	transfert m_trsf;
+	transfert	m_trsf;
 
 	//! Couche à laquelle il appartient
-	Layer* m_layer;
+	Layer*		m_layer;
 
 	//! Gradient du neurone
-	double m_gradient;
+	double		m_gradient;
 };
 
 class NeuronFirst :
@@ -94,8 +97,11 @@ public:
 	//! Constructeur réellement utilisé
 	NeuronFirst(LayerFirst* layer, transfert trsf);
 
+	//! Destructeur
+	~NeuronFirst();
+
 	//! Recharger les neurones
-	bool			initNeuron(double input);
+	virtual bool	initNeuron(double input);
 
 	//! Premire couche ?
 	virtual bool	isFirst();
@@ -113,6 +119,9 @@ public:
 
 	//! Constructeur réellement utilisé
 	NeuronLast(LayerLast* layer, transfert trsf);
+
+	//! destructeur
+	~NeuronLast();
 
 	//! Premire couche ?
 	virtual bool	isFirst();
@@ -147,13 +156,13 @@ public:
 protected:
 
 	//! L'ensemble des Neurones de la couche précédente (neurones sources, et non successeurs)
-	std::vector<Neuron*> m_neuronsPrev;
+	std::vector<Neuron*>	m_neuronsPrev;
 
 	//! Nombre de liaisons avec la couche précédente
-	const int m_bindingsNumber;
+	const int				m_bindingsNumber;
 
 	//! Poids des liaisons avec les neurones de la couche précédente
-	double* m_weightPrev;
+	vd						m_weightPrev;
 
 
 };
@@ -167,6 +176,9 @@ public:
 
 	//! Si aucune fonction de transfert n'est donné en paramètre, on prend une sigmoide
 	NeuronHidden(LayerHidden* layer, transfert trsf = 0);
+
+	//! Destructeur
+	~NeuronHidden();
 
 	//! initialise le gradient (= Neuron::initNeuron)
 	bool			initNeuronGradient();

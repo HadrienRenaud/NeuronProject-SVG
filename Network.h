@@ -20,7 +20,7 @@ public:
 	   \param nom_fichier string qui servira a stocke le nom du fichier pendant les recuperations, sauvegardes
 	   \param maximal_distance initialisation de l'attribut [m_maximal_distance](@maximal_distance)
 	 */
-	Network(char lettre_testee, string nom_fichier = "", double maximal_distance = MAXIMAL_DISTANCE);
+	Network(double maximal_distance = MAXIMAL_DISTANCE);
 	//! Constructeur initialisateur
 	/*!
 	   initialise tous les attributs :
@@ -28,7 +28,7 @@ public:
 	   \param nom_fichier string qui servira a stocke le nom du fichier pendant les recuperations, sauvegardes
 	   \param maximal_distance initialisation de l'attribut [m_maximal_distance](@maximal_distance)
 	 */
-	Network(char lettre_testee, string geometry, string nom_fichier = "", double maximal_distance = MAXIMAL_DISTANCE);
+	Network(string geometry, double maximal_distance = MAXIMAL_DISTANCE);
 
 	//! Destructeur
 	~Network();
@@ -59,10 +59,10 @@ public:
 	bool		isALoop() const;
 
 	//! Lancer la propagation
-	void getOutput(double* inputs, double output[]);
+	vd getOutput(vd inputs);
 
 	//! Algorithme d'apprentissage (tout initialise)
-	void	retropropagation(double* expectedOutputs);
+	void	retropropagation(vd expectedOutputs);
 
 	//! Sauver l'etat du réseau
 	void	save();
@@ -79,25 +79,6 @@ public:
 	//! Actualise le réseau
 	void	getMostRecent();
 
-	//! Ecrit le resultat de l'apprentissage dans un fichier
-	void	writeReport(bool resultat, int count, double distance_moyenne, double temps_mis, string commentaires);
-
-	//! Apprentissage sur la base de donnee
-	/*!
-	   Apprend sur toute la base de donne decrite par :
-	   \param nb_exemples nombre d'exemples a traiter
-	   \param tabloFichiers tableau de nb_exemples noms de fichiers sur lesquels apprendre, la sortie attendue pour chaque fichier etant la premiere lettre du nom
-	   \param inputs entree a donner au reseau
-	 */
-	void learnNetwork(const int nb_exemples, char** tabloFichiers, double** inputs);
-
-
-	//! Retourne la lettre testee par le reseau
-	char	getLettreTestee();
-
-	//! Fixe la lettre testee par le reseau
-	void	setLettreTestee(char lettre_testee);
-
 	//! Retourne la distance maximale en fin d'apprentissage productif
 	double	getMaximalDistance();
 
@@ -113,47 +94,104 @@ public:
 	//! Retourne la geometrie du réseau
 	string	getGeometry() const;
 
-private:
+	//! Algorithme d'apprentissage
+	void	learn(const int nbExemples, v2d inputs, v2d expectedOutputs);
+
+protected:
 
 	//! Pointeur vers la premiere couche
 	/*! Seule la premiere couche suffit, le reseau fonctionne comme une liste chainee */
 	LayerFirst* m_firstLayer;
 
 	//! Pointeur vers la derniere couche
-	LayerLast* m_lastLayer;
+	LayerLast*	m_lastLayer;
 
-//! Nombre total de liaison dans le reseau
-	int	m_totalBindingsNumber;
+	//! Nombre total de liaison dans le reseau
+	int			m_totalBindingsNumber;
 
-//! On procede à la propagation seulement si m_initialized est vrai
-	bool m_initialized;
+	//! On procede à la propagation seulement si m_initialized est vrai
+	bool		m_initialized;
 
-//! On procede à la retropropagation seulement si m_gradientInitialized est vrai
-	bool m_gradientInitialized;
+	//! On procede à la retropropagation seulement si m_gradientInitialized est vrai
+	bool		m_gradientInitialized;
 
-//! Facteur d'inertie, par defaut define -> ALPHA
-	double m_momentum;
+	//! Facteur d'inertie, par defaut define -> ALPHA
+	double		m_momentum;
 
-//! Distance maximale en fin d'apprentissage productif
-	double m_maximal_distance;
+	//! Distance maximale en fin d'apprentissage productif
+	double		m_maximal_distance;
 
-//! Nombre maximal de boucles d'apprentissage a effectuer
-	int	m_maxLimitLoop;
-
-//! Lettre testee par le neurone
-	char m_testedLetter;
+	//! Nombre maximal de boucles d'apprentissage a effectuer
+	int			m_maxLimitLoop;
 
 	//! Nom du fichier dans lequel le reseau est sauvegarde/ recupere
-	char* m_nameFile;
+	// const char* m_nameFile;
+	char	m_nameFile[MAX_LENGTH_NAME_FILE];
 
 	//! Géométrie du réseau
-	string m_geometry;
+	string	m_geometry;
 
 	//! Nombre de couches du réseau
-	int m_numberLayer;
+	int		m_numberLayer;
 
 	//! Fonction créant les couches
 	void setLayers(istream &geometry);
+};
+
+class NetworkLetter :
+	public Network
+{
+public:
+	//! Constructeur utilise
+	/*!
+	   initialise tous les attributs :
+	   \param lettre_testee lettre dont s'occupera le reseau
+	   \param nom_fichier string qui servira a stocke le nom du fichier pendant les recuperations, sauvegardes
+	   \param maximal_distance initialisation de l'attribut [m_maximal_distance](@maximal_distance)
+	 */
+	NetworkLetter(char lettre_testee, double maximal_distance = MAXIMAL_DISTANCE);
+	//! Constructeur initialisateur
+	/*!
+	   initialise tous les attributs :
+	   \param lettre_testee lettre dont s'occupera le reseau
+	   \param nom_fichier string qui servira a stocke le nom du fichier pendant les recuperations, sauvegardes
+	   \param maximal_distance initialisation de l'attribut [m_maximal_distance](@maximal_distance)
+	 */
+	NetworkLetter(char lettre_testee, string geometry, double maximal_distance = MAXIMAL_DISTANCE);
+
+	//! Destructeur
+	~NetworkLetter();
+
+	//! Actualise le réseau
+	void	getMostRecent();
+
+	//! Ecrit le resultat de l'apprentissage dans un fichier
+	void	writeReport(bool resultat, int count, double distance_moyenne, double temps_mis, string commentaires);
+
+	//! Sauver l'etat du réseau
+	void	save();
+
+	//! Apprentissage sur la base de donnee
+	/*!
+	   Apprend sur toute la base de donne decrite par :
+	   \param nb_exemples nombre d'exemples a traiter
+	   \param tabloFichiers tableau de nb_exemples noms de fichiers sur lesquels apprendre, la sortie attendue pour chaque fichier etant la premiere lettre du nom
+	   \param inputs entree a donner au reseau
+	 */
+	void	learn(const int nb_exemples, vc tabloFichiers, v2d inputs);
+
+	//! Retourne la lettre testee par le reseau
+	char	getLettreTestee();
+
+	//! Fixe la lettre testee par le reseau
+	void	setLettreTestee(char lettre_testee);
+
+private:
+
+	//! Lettre testee par le neurone
+	char m_testedLetter;
+
+
 };
 
 template <class T>
@@ -162,10 +200,10 @@ template <class T>
 void	displayArray(T* data, int length);
 
 //! Calcul d'écart
-double	distance(double* data1, double* data2, int length);
+double	distance(vd data1, vd data2, int length);
 
 //! Calcul d'écart, modulo 26 : la casse n'est pas prise en compte
-double	distanceMod(double* data1, double* data2, int length);
+double	distanceMod(vd data1, vd data2, int length);
 
 
 #endif

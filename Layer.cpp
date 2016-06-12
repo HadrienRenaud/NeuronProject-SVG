@@ -13,8 +13,8 @@ Layer::Layer(Network* network, int neurons, transfert trsf) :
 	m_network(network),
 	m_size(neurons)
 {
-	for (int i = 0; i < m_size; ++i)
-		m_neurons.push_back(0);
+	// for (int i = 0; i < m_size; ++i)
+	// 	m_neurons.push_back(0);
 }
 
 Layer::~Layer()			//destructeur, inintéressant
@@ -49,7 +49,11 @@ void Layer::resetNeurons()
 		m_neurons[i]->initNeuron();
 }
 
-void Layer::resetNeuronsGradient() const
+void Layer::resetNeuronsGradient()
+{
+}
+
+void Layer::calculateGradient()
 {
 }
 
@@ -73,19 +77,37 @@ LayerFirst::LayerFirst(Network* network, int neurons, LayerLast* nextLayer, tran
 			//en-dessous dans les fonctions setNextLayer/setPreviousLayer
 		}
 	}
-	if (nextLayer != 0)
-		nextLayer->setPreviousLayer(this);
-	setNextLayer(nextLayer);			//on fait le lien dans les deux sens
-	for (int i = 0; i < neurons; ++i)
-	{
-		delete m_neurons[i];
-		m_neurons[i] = new NeuronFirst(this, trsf);
-	}
+
+	if (nextLayer)							// si ce n'est pas un pointeur vide
+		nextLayer->setPreviousLayer(this);	// on fait le lien suivante -> celle ci
+	setNextLayer(nextLayer);				//on fait le lien celle-ci -> suivante
+	if (m_neurons.size())
+		for (int i = 0; i < neurons; ++i)
+		{
+			delete m_neurons[i];
+			m_neurons[i] = new NeuronFirst(this, trsf);
+		}
+	else
+		for (int i = 0; i < neurons; ++i)
+		{
+			NeuronFirst* neu = new NeuronFirst(this, trsf);
+			m_neurons.push_back(neu);
+		}
 }
 
 LayerFirst::~LayerFirst()
 {
 	delete m_nextLayer;
+}
+
+bool LayerFirst::isLast() const
+{
+	return false;
+}
+
+bool LayerFirst::isFirst() const
+{
+	return true;
 }
 
 NeuronFirst* LayerFirst::getNeuron(int i) const
@@ -106,7 +128,7 @@ bool LayerFirst::setNextLayer(LayerLast* layer)
 	return true;
 }
 
-void LayerFirst::resetNeurons(double* inputs)
+void LayerFirst::resetNeurons(vector<double> inputs)
 {
 	for (unsigned int i = 0; i < m_neurons.size(); i++)
 		m_neurons[i]->initNeuron(inputs[i]);
@@ -127,11 +149,18 @@ LayerLast::LayerLast(Network* network, int neurons, LayerFirst* previousLayer, t
 	if (previousLayer != 0)
 		previousLayer->setNextLayer(this);
 	setPreviousLayer(previousLayer);
-	for (int i = 0; i < neurons; ++i)
-	{
-		delete m_neurons[i];
-		m_neurons[i] = new NeuronLast(this, trsf);
-	}
+	if (m_neurons.size())
+		for (int i = 0; i < neurons; ++i)
+		{
+			delete m_neurons[i];
+			m_neurons[i] = new NeuronLast(this, trsf);
+		}
+	else
+		for (int i = 0; i < neurons; ++i)
+		{
+			NeuronLast* neu = new NeuronLast(this, trsf);
+			m_neurons.push_back(neu);
+		}
 }
 LayerLast::~LayerLast()
 {
@@ -179,6 +208,7 @@ void LayerLast::calculateGradient()				//rétropropasgation du gradient
 {
 	for (unsigned int i = 0; i < m_neurons.size(); i++)
 		m_neurons[i]->sendGradient();
+	getPreviousLayer()->calculateGradient();
 }
 
 bool LayerLast::learn()
@@ -188,7 +218,7 @@ bool LayerLast::learn()
 	return true;
 }
 
-void LayerLast::resetNeuronsGradient(double* expectedOutputs)
+void LayerLast::resetNeuronsGradient(vd expectedOutputs)
 {
 	for (unsigned int i = 0; i < m_neurons.size(); i++)
 		m_neurons[i]->initNeuronGradient(expectedOutputs[i]);
@@ -229,15 +259,28 @@ LayerHidden::LayerHidden(Network* network, int neurons, LayerFirst* previousLaye
 		nextLayer->setPreviousLayer(this);
 	if (previousLayer != 0)
 		previousLayer->setNextLayer(this);
-	for (int i = 0; i < neurons; ++i)
-	{
-		delete m_neurons[i];
-		m_neurons[i] = new NeuronHidden(this, trsf);
-	}
+
+	if (m_neurons.size())
+		for (int i = 0; i < neurons; ++i)
+		{
+			delete m_neurons[i];
+			m_neurons[i] = new NeuronHidden(this, trsf);
+		}
+	else
+		for (int i = 0; i < neurons; ++i)
+		{
+			NeuronHidden* neu = new NeuronHidden(this, trsf);
+			m_neurons.push_back(neu);
+		}
 }
 
 LayerHidden::~LayerHidden()
 {
+}
+
+int LayerHidden::getSize() const
+{
+	return LayerLast::getSize(); // = Layer::getSize();
 }
 
 NeuronHidden* LayerHidden::getNeuron(int i) const
@@ -282,7 +325,6 @@ void LayerHidden::calculate()
 
 void LayerHidden::calculateGradient()
 {
-	getNextLayer()->calculateGradient();
 	LayerLast::calculateGradient();
 }
 
@@ -290,4 +332,11 @@ bool LayerHidden::learn()
 {
 	LayerLast::learn();
 	getNextLayer()->learn();
+}
+
+void LayerHidden::resetNeuronsGradient()
+{
+	for (int i = 0; i < getSize(); ++i)
+		getNeuron(i)->setGradient(0);
+	getPreviousLayer()->resetNeuronsGradient();
 }

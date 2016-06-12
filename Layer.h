@@ -22,7 +22,7 @@ public:
 	Layer(Network* network, int neurons = 0, transfert trsf = 0);
 
 	//! Destructeur
-	~Layer();
+	virtual ~Layer();
 
 	//! nombre de neurones dans la couche
 	int				getSize() const;
@@ -31,7 +31,7 @@ public:
 	virtual bool	isFirst() const = 0;
 
 	//! S'agit-il de la couche de sortie ?
-	virtual bool	isLast() const = 0;
+	virtual bool	isLast() const	= 0;
 
 	//! On récupère le n-ième neurone
 	Neuron*			getNeuron(int n) const;
@@ -40,21 +40,24 @@ public:
 	Network*		getNetwork() const;
 
 	//! Préparer les neurones à propager
-	void			resetNeurons();
+	virtual	void	resetNeurons();
 
 	//! réinitialise le gradient (ne fait rien si c'est une LayerFirst)
-	void			resetNeuronsGradient() const;
+	virtual void	resetNeuronsGradient();
+
+	//! envoie le gradient, ne fait rien
+	void calculateGradient();
 
 protected:
 
 	//! Le réseau auquel la couche appartient
-	Network* m_network;
+	Network*				m_network;
 
 	//! La taille de la couche
-	const int m_size;
+	const int				m_size;
 
 	//! L'ensemble de ses neurones
-	std::vector<Neuron*> m_neurons;
+	std::vector<Neuron*>	m_neurons;
 };
 
 class LayerLast;
@@ -70,7 +73,7 @@ public:
 	LayerFirst(Network* network, int neurons, LayerLast* nextLayer, transfert trsf);
 
 	//! Destructeur
-	~LayerFirst();
+	virtual ~LayerFirst();
 
 	//! Récupère le neurone i
 	NeuronFirst*	getNeuron(int i) const;
@@ -88,15 +91,15 @@ public:
 	virtual bool	isFirst() const;
 
 	//! remet correctement les inputs
-	void			resetNeurons(double* inputs);
+	virtual void	resetNeurons(vector<double> inputs);
 
 protected:
 
 	//! Couche suivante
-	LayerLast* m_nextLayer;
+	LayerLast*					m_nextLayer;
 
 	//! L'ensemble de ses neurones
-	std::vector<NeuronFirst*> m_neurons;
+	std::vector<NeuronFirst*>	m_neurons;
 
 };
 
@@ -112,7 +115,7 @@ public:
 	LayerLast(Network* network, int neurons, LayerFirst* previousLayer, transfert trsf);
 
 	//! Destructeur
-	~LayerLast();
+	virtual ~LayerLast();
 
 	//! Récupère le neurone i
 	NeuronLast*		getNeuron(int i) const;
@@ -130,29 +133,29 @@ public:
 	virtual bool	isLast() const;
 
 	//! Demander à chaque neurone de calculer sa sortie
-	void			calculate();
+	virtual void	calculate();
 
 	//! Demander à chaque neurone d'envoyer le gradient
-	void			calculateGradient();
+	virtual void	calculateGradient();
 
 	//! Dit a chaque neurone de Neuron::learn()
-	bool			learn();
+	virtual bool	learn();
 
 	//! Préparer les neurones à rétropropager
-	void			resetNeuronsGradient(double* expectedOutputs);
+	virtual void	resetNeuronsGradient(vd expectedOutputs);
 
 	//! Attribuer les facteurs de gradient
-	void			setWeight(istream &file);
+	virtual void	setWeight(istream &file);
 
 	//! Sauvegarder les poids
-	void			saveWeight(ostream &file) const;
+	virtual void	saveWeight(ostream &file) const;
 
 protected:
 	//! Couche precedente
-	LayerFirst* m_previousLayer;
+	LayerFirst*					m_previousLayer;
 
 	//! L'ensemble de ses neurones
-	std::vector<NeuronLast*> m_neurons;
+	std::vector<NeuronLast*>	m_neurons;
 
 };
 
@@ -168,7 +171,10 @@ public:
 	LayerHidden(Network* network, int neurons, LayerFirst* previousLayer, LayerLast* nextLayer, transfert trsf);
 
 	//! Destructeur
-	~LayerHidden();
+	virtual ~LayerHidden();
+
+	//! Retourne la taille de la couche
+	int getSize() const;
 
 	//! Récupère le neurone i
 	NeuronHidden*	getNeuron(int i) const;

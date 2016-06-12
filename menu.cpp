@@ -13,6 +13,7 @@ void menu(SDL_Renderer *ren)
 	int				nombreTests					= 0;
 	int				posRep						= 0;
 	int				length_alphabet				= LENGTH_ALPHABET;
+	string			geometry					= GEOMETRY;
 	char			testedImageName[150]		= "";
 	char			testedImageNameFull[200]	= "";
 	char			testedImageText[150]		= "";
@@ -29,8 +30,8 @@ void menu(SDL_Renderer *ren)
 	SDL_Texture *	background			= SDL_CreateTextureFromSurface(ren, backgroundSurface);
 
 
-	SDL_Surface *	loadingText	= TTF_RenderText_Blended(TTF_OpenFont("resources/font_buttons.ttf", 80), "Loading ...", color);
-	SDL_Texture *	loading		= SDL_CreateTextureFromSurface(ren, loadingText);
+	SDL_Surface *	loadingText			= TTF_RenderText_Blended(TTF_OpenFont("resources/font_buttons.ttf", 80), "Loading ...", color);
+	SDL_Texture *	loading				= SDL_CreateTextureFromSurface(ren, loadingText);
 
 	Button			exitButton(ren, "Exit", 16, 235, 680, 530, 100, 30);
 	Button			databaseButton(ren, "Create images", 16, 235, 20, 440, 200, 30);
@@ -79,15 +80,15 @@ void menu(SDL_Renderer *ren)
 	renderTexture(ren, loading, (400 - loadingText->w / 2) + 30, 50);
 	SDL_RenderPresent(ren);
 
-	length_alphabet = getLenghtAlphabet();
-	double			inputList[FIRST_LAYER_SIZE];
-	cout << "Recuperation des reseaux ... " << flush;
-	NetworkArray*	tablo_net = new NetworkArray(inputList, length_alphabet);
+	getOptions(&length_alphabet, &geometry);
 
-	//tablo_net->getMostRecent();
+	cout << "Recuperation des reseaux ... " << flush;
+	NetworkArray* tablo_net = new NetworkArray(length_alphabet, geometry);
+
+	tablo_net->getMostRecent();
 	cout << "Reseaux recuperes." << endl;
 
-	double input[FIRST_LAYER_SIZE];
+	vd input;
 
 	while (!quitLoop)
 	{
@@ -126,9 +127,6 @@ void menu(SDL_Renderer *ren)
 			previousButton.pressUp(xMouse, yMouse);
 
 			break;
-
-			// TODO : Blitscaled
-			// TODO : Rendre tous les arguments optionnels quand possible
 		}
 
 
@@ -175,10 +173,10 @@ void menu(SDL_Renderer *ren)
 				strcpy(testedImageNameFull, DOSSIERTEST);
 				strcat(testedImageNameFull, ep->d_name);
 				strcpy(testedImageText, ep->d_name);
-				testedImageText[strlen(testedImageText) - 4] = '\0';	//Celui correspondant au fichier texte est coupé 4 caractères avant la fin (on tronque le .png)
+				testedImageText[strlen(testedImageText) - 4]	= '\0';	//Celui correspondant au fichier texte est coupé 4 caractères avant la fin (on tronque le .png)
 				strcat(testedImageText, ".txt");						//Puis on lui ajoute ".txt"
 
-				testedImage	= IMG_Load(testedImageNameFull);
+				testedImage										= IMG_Load(testedImageNameFull);
 
 				if (testedImage == NULL)
 				{
@@ -207,7 +205,8 @@ void menu(SDL_Renderer *ren)
 					strcat(testedImageName, ".txt");						// On ajoutee le .txt
 
 					cout << "testedImageName : " << testedImageName << endl;
-					if (readExemple(testedImageText, input, FIRST_LAYER_SIZE, DOSSIERTESTTEXT))
+					input = readExemple(testedImageText, FIRST_LAYER_SIZE, DOSSIERTESTTEXT);
+					if (input.size())
 						testResult[strlen(testResult) - 1] = tablo_net->testNetworks(input);
 					else
 						testResult[strlen(testResult) - 1] = '_';
@@ -268,11 +267,11 @@ void menu(SDL_Renderer *ren)
 			if (!caseLearn.hasBeenPressed())
 			{
 				delete tablo_net;
-				NetworkArray* tablo_net = new NetworkArray(inputList, length_alphabet);
-				tablo_net->learnAllNetworks();
+				NetworkArray* tablo_net = new NetworkArray(length_alphabet, geometry);
+				tablo_net->learn();
 			}
 			else
-				tablo_net->learnAllNetworks();
+				tablo_net->learn();
 		}
 		else if (testButton.hasBeenPressed() || keyboardInput[19])
 		{
@@ -280,7 +279,7 @@ void menu(SDL_Renderer *ren)
 			testButton.reset();
 			renderTexture(ren, loading, (400 - loadingText->w / 2) + 30, 50);
 
-			testing	= true;
+			testing			= true;
 			nextButton.setPress(true);
 
 			compteurTest	= -1;
@@ -305,7 +304,6 @@ void menu(SDL_Renderer *ren)
 			keyboardInput[0] = false;
 			filtres(DOSSIERTEST, DOSSIERTESTTEXT, true);
 			cout << "Sur les exemples donnes, le reseau a un taux de reussite de : " << tablo_net->testAll() << endl << endl;
-
 		}
 		else
 			SDL_RenderPresent(ren);
@@ -354,7 +352,7 @@ void keyboard(SDL_Event event, bool* keyboardInput)
 	}
 }
 
-int getLenghtAlphabet()
+void getOptions(int* length_alphabet, string* geometry)
 {
 	ifstream	optionsFile(NAME_CONFIG_FILE);
 	string		line;
@@ -373,8 +371,9 @@ int getLenghtAlphabet()
 			line_stream >> cmdValueStr;
 
 			if (cmdName == "length_alphabet")
-				cmdValue = atoi(cmdValueStr.c_str());
+				*length_alphabet = atoi(cmdValueStr.c_str());
+			else if (cmdName == "geometry")
+				*geometry = cmdValueStr + " " + line_stream.str();
 		}
 	}
-	return cmdValue;
 }
