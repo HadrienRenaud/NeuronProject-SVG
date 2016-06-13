@@ -49,13 +49,12 @@ void Network::recuperateur()
 			{
 				j		= 0;										// indice de la liaison arrivant au neurone considéré
 				istringstream neurone_stream(neurone_str);			// objet créé pour le traitement du string récupéré
-				neurone = layer->getNeuron(i);						// neurone considéré
 				while (getline(neurone_stream, weight_str, ' '))	// pour toute liaison arrivant au neurone
 				{
 					if (weight_str.size())							// si ce n'est pas un faux poids vide
 					{
 						weight = strtod(weight_str.c_str(), &pEnd);	//on récupère le poids de la liaison
-						neurone->getBinding(j)->setWeight(weight);	//on change le poids de la liaison
+						layer->getNeuron(i)->setWeight(j,weight);	//on change le poids de la liaison
 						j++;
 					}
 				}
@@ -93,9 +92,8 @@ void Network::save()
 		file << endl << layer->getSize() << ' ';						// on donne sa taille
 		for (int i(0); i < layer->getSize(); i++)						// pour tout neurone de la couche
 		{
-			neurone = layer->getNeuron(i);								// on récupère le neurone
 			for (int j(0); j < neurone->getBindingsNumber(); j++)		// pour toute liaison de la couche précédente vers ce neurone
-				file << neurone->getBinding(j)->getWeight() << ' ';		// on ajoute au fichier le poids de la liaison
+				file << layer->getNeuron(i)->getWeight(j) << ' ';		// on ajoute au fichier le poids de la liaison
 			file << ',';												//séparateur
 		}
 	}

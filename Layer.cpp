@@ -27,10 +27,15 @@ Layer::Layer(Network* network, int neurons, Layer* previousLayer, Layer* nextLay
 			//en-dessous dans les fonctions setNextLayer/setPreviousLayer
 		}
 	}
+
+	//on ajoute le nombre de neurones demandé
+	for (int i = 0; i < neurons; i++)
+	{
+		Neuron* neuron = new Neuron(this, trsf);
+		m_neurons.push_back(neuron);
+	}
 	setNextLayer(nextLayer);			//on fait le lien dans les deux sens
 	setPreviousLayer(previousLayer);	//idem
-	for (int i = 0; i < neurons; i++)
-		addNeuron(trsf);				//on ajoute le nombre de neurones demandé
 }
 
 Layer::~Layer()	//destructeur, inintéressant
@@ -62,6 +67,10 @@ bool Layer::setNextLayer(Layer* layer)
 		layer->m_previousLayer = this;
 		if (layer == m_network->getFirstLayer())	//on vérifie que la firstlayer
 			m_network->setFirstLayer(this);			//n'ait pas changé
+
+		// On fait la liason dans les deux sens :
+		layer->setPreviousLayer(this);
+
 		return true;
 	}
 	return false;
@@ -78,8 +87,18 @@ bool Layer::setPreviousLayer(Layer* layer)
 		if (layer->getNetwork() != getNetwork())	//on ne relie pas si les couche
 			return false;							//ne sont pas du mm réseau
 		layer->m_nextLayer = this;
+
 		if (this == m_network->getFirstLayer())		//on vérifie que la firstlayer n'ait
 			m_network->setFirstLayer(layer);		//pas changé
+
+		// On relie les neurones entre eux
+		for (int i = 0; i < getSize(); ++i)
+		{
+			getNeuron(i)->clearBindings();
+			for (int j = 0; j < layer->getSize(); ++j)
+				getNeuron(i)->addPrevNeuron(layer->getNeuron(j));
+		}
+
 		return true;
 	}
 	return false;
@@ -100,7 +119,7 @@ Neuron* Layer::getNeuron(int n) const
 	return 0;
 }
 
-void Layer::addNeuron(transfert trsf)	//NOUVEAU NEURONE !!!
+/*void Layer::addNeuron(transfert trsf)	//NOUVEAU NEURONE !!!
 {
 	Neuron* neuron = new Neuron(this, trsf);
 	double	weight;
@@ -139,7 +158,7 @@ void Layer::addNeurons(int n, transfert trsf)
 {
 	for (int i = 0; i < n; i++)
 		addNeuron(trsf);
-}
+}*/
 
 void Layer::calculate() const	//propagation normale
 {

@@ -48,16 +48,6 @@ public:
 
 	//! Le neurone envoie son propre gradient aux neurones précedents, pondérée par le poids de chaque liaison
 	void		sendGradient();
-	//! nouvelle liaison
-	/*!
-	    \param binding ajoute binding à [m_bindings](@m_bindings)
-	 */
-	void		addBinding(Binding* binding);
-	//! nouvelle liaison
-	/*!
-	    \param binding ajoute binding à [m_bindings](@m_bindings)
-	 */
-	void		addBinding(Neuron* neuron, double weight = 1);
 
 	//! Retourne l'entree du neurone
 	double		getInput() const;
@@ -78,14 +68,26 @@ public:
 	 */
 	bool		initNeuronGradient(double expectedOutput);
 
-	//! Récupérer la liaison d'indice n
-	Binding*	getBinding(int n);
-
 	//! Connaître la position du neuron dans sa couche
 	int			getIndexInLayer() const;
 
 	//! Algorithme d'apprentissage
 	void		learn();
+
+	//! Ajouter un neurone dans la couche précédente
+	void addPrevNeuron(Neuron* neurone);
+
+	//! Supprimer toutes les liaisons
+	void clearBindings();
+
+	//! Change le poids d'une liasons
+	void setWeight(int i, double w);
+
+	//! Ajoute au poids d'une liaison
+	void addGradient(double grad);
+
+	//! Retourne le poids d'une liaison
+	double getWeight(int i);
 
 private:
 
@@ -101,8 +103,14 @@ private:
 	//! Couche à laquelle il appartient
 	Layer* m_layer;
 
-	//! L'ensemble des liaisons (neurones sources, et non successeurs)
-	std::vector<Binding*> m_bindings;
+	//! Liste des neurones PRECEDENTS le neurone
+	std::vector<Neuron*> m_prevNeuron;
+
+	//! Liste des poids des liaisons avec le neurone précédent
+	std::vector<double> m_weight;
+
+	//! Liste des poids des liaisons avec le neurone précédentà l'étape précédente
+	std::vector<double> m_prevStepWeight;
 
 	//! Position du neuron dans sa couche
 	int	m_indexInLayer;
