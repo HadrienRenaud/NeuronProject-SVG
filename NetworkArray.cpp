@@ -26,9 +26,7 @@ NetworkArray::~NetworkArray()
 {
 	cout << "Destruction des reseaux ... " << flush;
 	for (int i = 0; i < m_length_alphabet; ++i)
-	{
 		delete m_tablo_net[i];
-	}
 	delete[] m_tablo_net;
 	cout << "Reseaux detruits !" << endl;
 }
@@ -39,10 +37,10 @@ void NetworkArray::learnAllNetworks()
 	cout << "Bienvenue dans le gestionnaire d'apprentissage du reseau de neurones." << endl << endl;
 
 	cout << "Initialisation des parametres." << endl;
-	clock_t	t0(clock());	//temps de départ du programme
+	clock_t		t0(clock());//temps de départ du programme
 
 	//nombre d'exemples à traiter
-	int const nb_exemples(countExemples());
+	int const	nb_exemples(countExemples());
 
 	// Initialisation des tableaux contenant les donnees des exemples
 	char**		tabloFichiers	= new char*[nb_exemples];
@@ -101,13 +99,13 @@ char NetworkArray::testNetworks(double input[], bool verbose)
 double NetworkArray::testAll(string directory)
 {
 	//nombre d'exemples à traiter
-	int const nb_exemples(countExemples(directory));
+	int const	nb_exemples(countExemples(directory));
 
 	//compteur de succes
-	int succes = 0;
+	int			succes			= 0;
 
 	// Initialisation des tableaux contenant les donnees des exemples
-	char** tabloFichiers = new char*[nb_exemples];
+	char**		tabloFichiers	= new char*[nb_exemples];
 
 	for (int i = 0; i < nb_exemples; ++i)
 		tabloFichiers[i] = new char[MAX_LENGTH_NAME_FILE];
@@ -247,7 +245,7 @@ void NetworkArray::setOptions()
 
 void NetworkArray::save()
 {
-	cout<< "Sauvegarde des réseaux ... " << flush;
+	cout << "Sauvegarde des réseaux ... " << flush;
 	for (int i = 0; i < m_length_alphabet; ++i)
 		m_tablo_net[i]->save();
 	cout << "Réseaux sauvegardés !" << endl;

@@ -42,10 +42,10 @@ private:
 	Neuron* m_neuron;
 
 	//! Poids de la liason
-	double m_weight;
+	double	m_weight;
 
 	//! Poids a l'etape d'apprentissage precedent : utile pour l'inertie
-	double m_previousStep;
+	double	m_previousStep;
 };
 
 #endif

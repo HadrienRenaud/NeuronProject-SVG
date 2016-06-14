@@ -90,25 +90,25 @@ public:
 private:
 
 	//! Somme pondérée des entrées
-	double m_input;
+	double					m_input;
 
 	//! Sortie = transfert(m_input)
-	double m_output;
+	double					m_output;
 
 	//! Fonction de transfert du neuron
-	transfert m_trsf;
+	transfert				m_trsf;
 
 	//! Couche à laquelle il appartient
-	Layer* m_layer;
+	Layer*					m_layer;
 
 	//! L'ensemble des liaisons (neurones sources, et non successeurs)
-	std::vector<Binding*> m_bindings;
+	std::vector<Binding*>	m_bindings;
 
 	//! Position du neuron dans sa couche
-	int	m_indexInLayer;
+	int						m_indexInLayer;
 
 	//! Gradient du neurone
-	double m_gradient;
+	double					m_gradient;
 };
 
 //2 couples (fonction,dérivée)

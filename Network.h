@@ -34,20 +34,6 @@ public:
 
 	//! Retourne la taille de la premiere couche = taille de l'entree a fournir
 	int		getFirstLayerSize() const;
-<<<<<<< HEAD
-	void	initNetwork(double* inputs);					//initialiser pour la propagation normale
-	void	initNetworkGradient(double* expectedOutputs);	//initialiser pour la rétropropagation
-	int		getTotalBindingsNumber() const;					//nombre de liaisons dans le réseau
-	int		getTotalLayerNumber();							//nombre de couches dans le réseau
-	void	increaseTotalBindingsNumber(int n = 1);			//agmenter
-	bool	isALoop() const;								//tester si le réseau boucle sur lui mm
-	void    launch(double output[]);							//lancer la propagation, le pointeur length est
-															//destiné à stocké la taille du tableau retourné
-	bool	launchGradient();								//lancer la rétropropagation du gradient
-	bool	learn();										//;)
-	void	save();											//sauver l'etat du réseau
-//ATTENTION, supprime toutes les donnes ! A n'utiliser qu'avec un nouvel objet
-=======
 
 	//! Initialiser pour la propagation normale
 	void	initNetwork(double* inputs);
@@ -80,7 +66,6 @@ public:
 	void	save();
 
 	//! Fixe le moment d'inertie à momentum
->>>>>>> origin/master
 	void	setMomentum(double momentum);
 
 	//! Retourne le moment d'inertie du reseau
@@ -128,31 +113,31 @@ private:
 
 	//! Pointeur vers la premiere couche
 	/*! Seule la premiere couche suffit, le reseau fonctionne comme une liste chainee */
-	Layer* m_firstLayer;
+	Layer*	m_firstLayer;
 
 //! Nombre total de liaison dans le reseau
-	int	m_totalBindingsNumber;
+	int		m_totalBindingsNumber;
 
 //! On procede à la propagation seulement si m_initialized est vrai
-	bool m_initialized;
+	bool	m_initialized;
 
 //! On procede à la retropropagation seulement si m_gradientInitialized est vrai
-	bool m_gradientInitialized;
+	bool	m_gradientInitialized;
 
 //! Facteur d'inertie, par defaut define -> ALPHA
-	double m_momentum;
+	double	m_momentum;
 
 //! Distance maximale en fin d'apprentissage productif
-	double m_maximal_distance;
+	double	m_maximal_distance;
 
 //! Nombre maximal de boucles d'apprentissage a effectuer
-	int	m_maxLimitLoop;
+	int		m_maxLimitLoop;
 
 //! Lettre testee par le neurone
-	char m_testedLetter;
+	char	m_testedLetter;
 
 //! Nom du fichier dans lequel le reseau est sauvegarde/ recupere
-	char* m_nameFile;
+	char*	m_nameFile;
 };
 
 template <class T>

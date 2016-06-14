@@ -93,19 +93,19 @@ public:
 private:
 
 	//! Le réseau auquel la couche appartient
-	Network* m_network;
+	Network*				m_network;
 
 	//! L'ensemble de ses neurones
-	std::vector<Neuron*> m_neurons;
+	std::vector<Neuron*>	m_neurons;
 
 	//! Couche precedente
-	Layer* m_previousLayer;
+	Layer*					m_previousLayer;
 
 	//! Couche suivante
-	Layer* m_nextLayer;
+	Layer*					m_nextLayer;
 
 	//! nombre de [Bindings](@Bindings), s'incrémente à chaque nouvelle liaison
-	int	m_bindingsNumber;
+	int						m_bindingsNumber;
 };
 
 #endif
