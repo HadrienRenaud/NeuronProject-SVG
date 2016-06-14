@@ -8,8 +8,10 @@ void scriptFile(ifstream &input)
 	string				cmdName;
 	int					compteur(0);
 
-	while (input >> cmdName)
-		cmdsVect.push_back(cmdName);
+
+	while (getline(input,cmdName))
+		if (cmdName.size() && cmdName[0]!='#')
+			cmdsVect.push_back(cmdName);
 
 	string cmds[cmdsVect.size()];
 	for (int i = 0; i < cmdsVect.size(); ++i)
@@ -25,8 +27,8 @@ void scriptFile(ifstream &input)
 void commands(int nbCmds, string cmds[])
 {
 	int				length_alphabet = getLenghtAlphabet();
-
-	std::cout << length_alphabet << "\n";
+	string geometry = GEOMETRY;
+	string bin;
 	NetworkArray*	tablo_net		= new NetworkArray(length_alphabet);
 
 	for (int i = 0; i < nbCmds; ++i)
@@ -61,6 +63,24 @@ void commands(int nbCmds, string cmds[])
 		{
 			filtres(DOSSIERTEST, DOSSIERTESTTEXT, true);
 			cout << tablo_net->testAll() << endl;
+		}
+
+		else if (cmds[i].substr(0,8) == "geometry")
+		{
+			istringstream line(cmds[i]);
+			line >> bin;
+			line >> bin;
+			geometry = line.str();
+			cout << "geometry changes to : " << geometry << endl;
+		}
+
+		else if (cmds[i].substr(0,15) == "length_alphabet")
+		{
+			istringstream line(cmds[i]);
+			line >> bin;
+			line >> bin;
+			line >> length_alphabet;
+			cout << "length_alphabet changes to : " << length_alphabet << endl;
 		}
 
 		cout << endl;
