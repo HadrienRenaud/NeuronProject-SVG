@@ -80,6 +80,7 @@
 #define NOM_SVG							"plus_recent_"
 //! L'extension dediee aux sauvegardes reseau
 #define EXTENSION_SVG					".svg_reseau"
+#define GEOMETRY						"4 400 100 10 1"
 
 
 #include "menu.h"

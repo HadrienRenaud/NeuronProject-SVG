@@ -5,14 +5,14 @@
 
 using namespace std;
 
-class Network;
+class NetworkLetter;
 
 //! Classe comprenant tous les réseaux avec des méthodes groupées.
 class NetworkArray {
 public:
 
 	//! Constructeur : crée les réseaux, et charge les options.
-	NetworkArray(int length_alphabet = LENGTH_ALPHABET);
+	NetworkArray(int length_alphabet = LENGTH_ALPHABET, string geometry = GEOMETRY);
 
 	//! Destructeur : détruit les réseaux.
 	~NetworkArray();
@@ -83,17 +83,17 @@ public:
 
 private:
 	//! Le tableau des networks
-	Network**	m_tablo_net;
+	NetworkLetter**	m_tablo_net;
 	//! La distance maximale après un apprentissage producti
-	double		m_maximal_distance;
+	double			m_maximal_distance;
 	//! La limite du nombre de boucles d'apprentissag
-	int			m_maxLimitLoop;
+	int				m_maxLimitLoop;
 	//! L'alphabet concerne
-	const char* m_alphabet;
+	const char*		m_alphabet;
 	//! La longueur de l'alphabet concern
-	int			m_length_alphabet;
+	int				m_length_alphabet;
 	//! Le moment d'inertie de tous les réseau
-	double		m_momentum;
+	double			m_momentum;
 };
 
 //! affichage d'un tableau

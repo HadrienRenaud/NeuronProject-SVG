@@ -210,7 +210,7 @@ void menu(SDL_Renderer *ren)
 					if (readExemple(testedImageText, input, FIRST_LAYER_SIZE, DOSSIERTESTTEXT))
 						testResult[strlen(testResult) - 1] = tablo_net->testNetworks(input);
 					else
-						testResult[strlen(testResult) - 1] = '_';
+						testResult[strlen(testResult) - 1] = '#';
 					cout << "Resultat du test : " << testResult << endl;
 
 					resultTest				= TTF_RenderText_Blended(TTF_OpenFont("resources/font_test.ttf", 30), testResult, color);

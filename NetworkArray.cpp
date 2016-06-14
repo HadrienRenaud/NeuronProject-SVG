@@ -2,8 +2,8 @@
 
 using namespace std;
 
-NetworkArray::NetworkArray(int length_alphabet) :
-	m_tablo_net(new Network*[length_alphabet]),
+NetworkArray::NetworkArray(int length_alphabet, string geometry) :
+	m_tablo_net(new NetworkLetter*[length_alphabet]),
 	m_maximal_distance(MAXIMAL_DISTANCE),
 	m_maxLimitLoop(MAX_LIMIT_LOOP * NB_LEARNING),
 	m_length_alphabet(length_alphabet),
@@ -12,12 +12,13 @@ NetworkArray::NetworkArray(int length_alphabet) :
 	cout << "Creation des reseaux ... " << flush;
 	for (int i = 0; i < m_length_alphabet; ++i)
 	{
-		m_tablo_net[i] = new Network(CHARS[i]);									//Le réseau
-		//Layer* l = new Layer(adresse du réseau, nombre de neurones dans la couche, adresse de la couche précédente, adresse de la couche suivante, fonction de transfert des neuronres de la couche);
-		Layer*	l1		= new Layer(m_tablo_net[i], FIRST_LAYER_SIZE,  0,  0);	//première couche
-		Layer*	l2		= new Layer(m_tablo_net[i], 100, l1, 0);				//seconde
-		Layer*	l3		= new Layer(m_tablo_net[i], 10, l2, 0);					//troisieme
-		Layer*	lend	= new Layer(m_tablo_net[i], LAST_LAYER_SIZE, l3, 0);	//couche de fin
+		// m_tablo_net[i] = new Network(CHARS[i]);									//Le réseau
+		// //Layer* l = new Layer(adresse du réseau, nombre de neurones dans la couche, adresse de la couche précédente, adresse de la couche suivante, fonction de transfert des neuronres de la couche);
+		// Layer*	l1		= new Layer(m_tablo_net[i], FIRST_LAYER_SIZE,  0,  0);	//première couche
+		// Layer*	l2		= new Layer(m_tablo_net[i], 100, l1, 0);				//seconde
+		// Layer*	l3		= new Layer(m_tablo_net[i], 10, l2, 0);					//troisieme
+		// Layer*	lend	= new Layer(m_tablo_net[i], LAST_LAYER_SIZE, l3, 0);	//couche de fin
+		m_tablo_net[i] = new NetworkLetter(CHARS[i], geometry);
 	}
 	cout << "Reseaux crees !" << endl;
 }
@@ -61,13 +62,14 @@ void NetworkArray::learnAllNetworks()
 	//Apprentissage
 	for (int i = 0; i < m_length_alphabet; ++i)
 	{
-		m_tablo_net[i]->learnNetwork(nb_exemples, tabloFichiers, inputs);
+		m_tablo_net[i]->learn(nb_exemples, tabloFichiers, inputs);
 		cout << endl << endl;
 	}
 }
 
 char NetworkArray::testNetworks(double input[], bool verbose)
 {
+	cout << "Bonjour" << endl;
 	//initialisation
 	char	lettre_trouvee('_');
 	double	maxi(LOWER_BOUND_DISTINCTION);

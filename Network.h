@@ -6,25 +6,26 @@
 class Layer;//on dit qu'on va utiliser la classe layer
 //! Classe Reseau de neurones
 /*! Contient sa premiere couche, les methodes et tous les parametres necessaire */
-class Network {
+
+class Network
+{
 public:
 	//! Constructeur par defaut (vide)
 	Network();
 	//! Constructeur utilise
 	/*!
 	   initialise tous les attributs :
-	   \param lettre_testee lettre dont s'occupera le reseau
-	   \param nom_fichier string qui servira a stocke le nom du fichier pendant les recuperations, sauvegardes
+	   \param geometry : geometrie du reseau
 	   \param maximal_distance initialisation de l'attribut [m_maximal_distance](@maximal_distance)
 	 */
-	Network(char lettre_testee, string nom_fichier = "", double maximal_distance = MAXIMAL_DISTANCE);
+	Network(string geometry, double maximal_distance = MAXIMAL_DISTANCE);
 
 	//! Destructeur
 	~Network();
 
 
 	//! Changer la première couche
-	void	setFirstLayer(Layer* layer = 0);
+	// void	setFirstLayer(Layer* layer = 0);
 
 	//! Retourne la premiere couche du reseau
 	Layer*	getFirstLayer() const;
@@ -41,14 +42,8 @@ public:
 	//! Initialiser pour la rétropropagation
 	void	initNetworkGradient(double* expectedOutputs);
 
-	//! Nombre de liaisons dans le réseau
-	int		getTotalBindingsNumber() const;
-
 	//! Nombre de couches dans le réseau
 	int		getTotalLayerNumber();
-
-	//! Augmenter le nombre de bindings de n (par defaut de 1)
-	void	increaseTotalBindingsNumber(int n = 1);
 
 	//! Tester si le réseau boucle sur lui mm
 	bool	isALoop() const;
@@ -74,6 +69,79 @@ public:
 	//! Fonction appelée pour récupérer à partir d'un fichier
 	void	recuperateur();
 
+	//! Actualise le réseau
+	void	getMostRecent();
+
+	//! Retourne la distance maximale en fin d'apprentissage productif
+	double	getMaximalDistance();
+
+	//! Fixe la distance maximale en fin d'apprentissage productif
+	void	setMaximalDistance(double maximal_distance);
+
+	//! Retourne le nombre maximal de boucles d'apprentissage a effectuer par le reseau
+	int		getMaxLimitLoop();
+
+	//! Fixe le nombre maximal de boucles d'apprentissage a effectuer par le reseau
+	void	setMaxLimitLoop(int maxLimitLoop);
+protected:
+
+	//! Pointeur vers la premiere couche
+	/*! Seule la premiere couche suffit, le reseau fonctionne comme une liste chainee */
+	Layer*	m_firstLayer;
+
+	//! Pointeur vers la dernere couche
+	Layer*	m_lastLayer;
+
+	//! Nombre total de liaison dans le reseau
+	int		m_totalBindingsNumber;
+
+	//! On procede à la propagation seulement si m_initialized est vrai
+	bool	m_initialized;
+
+	//! On procede à la retropropagation seulement si m_gradientInitialized est vrai
+	bool	m_gradientInitialized;
+
+	//! Facteur d'inertie, par defaut define -> ALPHA
+	double	m_momentum;
+
+	//! Distance maximale en fin d'apprentissage productif
+	double	m_maximal_distance;
+
+	//! Nombre maximal de boucles d'apprentissage a effectuer
+	int		m_maxLimitLoop;
+
+	//! Nom du fichier dans lequel le reseau est sauvegarde/ recupere
+	char*	m_nameFile;
+
+	//! geometrie du réseau
+	string	m_geometry;
+
+	//! Nombre de couches dans le réseau
+	int		m_nbLayers;
+
+};
+
+class NetworkLetter :
+	public Network
+{
+public:
+	//! Constructeur par défaut, inutile
+	NetworkLetter();
+
+	//! Constructeur réellement utilisé
+	/*!
+	   initialise tous les attributs :
+	   \param lettre_testee : charactere reconnu par le réseau
+	   \param geometry : geometrie du reseau
+	   \param maximal_distance initialisation de l'attribut [m_maximal_distance](@maximal_distance)
+	 */
+	NetworkLetter(char lettre_testee, string geometry, double maximal_distance = MAXIMAL_DISTANCE);
+
+	//! destructeur
+	~NetworkLetter();
+
+	//! Sauver l'etat du réseau
+	void	save();
 
 	//! Actualise le réseau
 	void	getMostRecent();
@@ -88,7 +156,7 @@ public:
 	   \param tabloFichiers tableau de nb_exemples noms de fichiers sur lesquels apprendre, la sortie attendue pour chaque fichier etant la premiere lettre du nom
 	   \param inputs entree a donner au reseau
 	 */
-	void learnNetwork(const int nb_exemples, char** tabloFichiers, double** inputs);
+	void learn(const int nb_exemples, char** tabloFichiers, double** inputs);
 
 
 	//! Retourne la lettre testee par le reseau
@@ -97,48 +165,16 @@ public:
 	//! Fixe la lettre testee par le reseau
 	void	setLettreTestee(char lettre_testee);
 
-	//! Retourne la distance maximale en fin d'apprentissage productif
-	double	getMaximalDistance();
 
-	//! Fixe la distance maximale en fin d'apprentissage productif
-	void	setMaximalDistance(double maximal_distance);
+protected:
 
-	//! Retourne le nombre maximal de boucles d'apprentissage a effectuer par le reseau
-	int		getMaxLimitLoop();
+	//! Lettre testee par le neurone
+	char m_testedLetter;
 
-	//! Fixe le nombre maximal de boucles d'apprentissage a effectuer par le reseau
-	void	setMaxLimitLoop(int maxLimitLoop);
 
-private:
-
-	//! Pointeur vers la premiere couche
-	/*! Seule la premiere couche suffit, le reseau fonctionne comme une liste chainee */
-	Layer*	m_firstLayer;
-
-//! Nombre total de liaison dans le reseau
-	int		m_totalBindingsNumber;
-
-//! On procede à la propagation seulement si m_initialized est vrai
-	bool	m_initialized;
-
-//! On procede à la retropropagation seulement si m_gradientInitialized est vrai
-	bool	m_gradientInitialized;
-
-//! Facteur d'inertie, par defaut define -> ALPHA
-	double	m_momentum;
-
-//! Distance maximale en fin d'apprentissage productif
-	double	m_maximal_distance;
-
-//! Nombre maximal de boucles d'apprentissage a effectuer
-	int		m_maxLimitLoop;
-
-//! Lettre testee par le neurone
-	char	m_testedLetter;
-
-//! Nom du fichier dans lequel le reseau est sauvegarde/ recupere
-	char*	m_nameFile;
 };
+
+
 
 template <class T>
 
@@ -150,6 +186,8 @@ double	distance(double* data1, double* data2, int length);
 
 //! Calcul d'écart, modulo 26 : la casse n'est pas prise en compte
 double	distanceMod(double* data1, double* data2, int length);
+
+
 
 
 #endif

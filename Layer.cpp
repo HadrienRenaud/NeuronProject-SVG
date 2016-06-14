@@ -17,16 +17,17 @@ Layer::Layer(Network* network, int neurons, Layer* previousLayer, Layer* nextLay
 	m_bindingsNumber(0)
 {
 	/* neurons : nombre de neurones dans la couche */
-	if (network)
-	{
-		if (network->getFirstLayer() == 0)
-		{
-			//cout << "coucou" << endl;
-			network->setFirstLayer(this);	//on vérifie une première fois que la
-			//fisrtlayer du réseau n'ait pas changé, puis une 2nde juste
-			//en-dessous dans les fonctions setNextLayer/setPreviousLayer
-		}
-	}
+	// if (network)
+	// {
+	// if (network->getFirstLayer() == 0)
+	// {
+	//  //cout << "coucou" << endl;
+	//  network->setFirstLayer(this);	//on vérifie une première fois que la
+	//  //fisrtlayer du réseau n'ait pas changé, puis une 2nde juste
+	//  //en-dessous dans les fonctions setNextLayer/setPreviousLayer
+	// }
+	// }
+
 	setNextLayer(nextLayer);			//on fait le lien dans les deux sens
 	setPreviousLayer(previousLayer);	//idem
 	for (int i = 0; i < neurons; i++)
@@ -60,8 +61,8 @@ bool Layer::setNextLayer(Layer* layer)
 		if (layer->getNetwork() != getNetwork())	//on ne relie pas si les couche
 			return false;							//ne sont pas du mm réseau
 		layer->m_previousLayer = this;
-		if (layer == m_network->getFirstLayer())	//on vérifie que la firstlayer
-			m_network->setFirstLayer(this);			//n'ait pas changé
+		// if (layer == m_network->getFirstLayer())	//on vérifie que la firstlayer
+		//  m_network->setFirstLayer(this);			//n'ait pas changé
 		return true;
 	}
 	return false;
@@ -78,8 +79,8 @@ bool Layer::setPreviousLayer(Layer* layer)
 		if (layer->getNetwork() != getNetwork())	//on ne relie pas si les couche
 			return false;							//ne sont pas du mm réseau
 		layer->m_nextLayer = this;
-		if (this == m_network->getFirstLayer())		//on vérifie que la firstlayer n'ait
-			m_network->setFirstLayer(layer);		//pas changé
+		// if (this == m_network->getFirstLayer())		//on vérifie que la firstlayer n'ait
+		//  m_network->setFirstLayer(layer);		//pas changé
 		return true;
 	}
 	return false;
