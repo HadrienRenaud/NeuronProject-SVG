@@ -14,7 +14,8 @@ Network::Network(string geometry, double maximal_distance) :
 	m_maximal_distance(MAXIMAL_DISTANCE),
 	m_maxLimitLoop(MAX_LIMIT_LOOP),
 	m_nameFile(new char[MAX_LENGTH_NAME_FILE]),
-	m_geometry(geometry)
+	m_geometry(geometry),
+	m_idReseau(0)
 {
 	m_momentum = ALPHA;
 
@@ -171,47 +172,138 @@ bool Network::learn()
 	return false;
 }
 
-void Network::save()
+string Network::getWeightStr()
 {
-	// On trouve le nom du fichier
-	time_t			t = time(0);							// l'heure
-	ostringstream	temps;									//flux pour traitement
+	ostringstream	output;
 
-	temps << asctime(localtime(&t));						//on récupère le flux correspondant au temps
-	string			str_nom_fichier(temps.str());			// on crée un string correspondant au flux
-	for (int i(0); i < (int)str_nom_fichier.size(); i++)	// on parcourt le nom du fichier
-		if (!isalnum(str_nom_fichier[i]))					// et on remplace tout ce qui ne va pas dans un nom de fichier par '_'
-			str_nom_fichier[i] = '_';
-	str_nom_fichier = string(DOSSIER_SVG) + str_nom_fichier + string(EXTENSION_SVG);
-	// adresse complete
-	strcpy(m_nameFile, str_nom_fichier.c_str());
+	Layer *			layer(getFirstLayer());								// on initialise la premiere couche
+	Neuron *		neurone;
 
-	//on écrit dans le fichier
-	ofstream	file(m_nameFile);										// flux sortant dans le fichier
-	file << getTotalLayerNumber() << ' ';								// on entre le nombre total de couches
-	Layer *		layer(getFirstLayer());									// on initialise la premiere couche
-	file << layer->getSize() << ' ';									// en donnant sa longueur
-	Neuron *	neurone;
 	while (layer->getNextLayer() != 0)									//pour toute couche
 	{
 		layer = layer->getNextLayer();									// on prend la suivante
-		file << endl << layer->getSize() << ' ';						// on donne sa taille
 		for (int i(0); i < layer->getSize(); i++)						// pour tout neurone de la couche
 		{
 			neurone = layer->getNeuron(i);								// on récupère le neurone
 			for (int j(0); j < neurone->getBindingsNumber(); j++)		// pour toute liaison de la couche précédente vers ce neurone
-				file << neurone->getBinding(j)->getWeight() << ' ';		// on ajoute au fichier le poids de la liaison
-			file << ',';												//séparateur
+				output << neurone->getBinding(j)->getWeight() << ' ';	// on ajoute au fichier le poids de la liaison
 		}
 	}
-
-	// on sauvegarde le dernier fichier enregistré dans mostRecent.txt :
-	string		mostRecent;
-	mostRecent = DOSSIER_SVG + string(NOM_SVG) + string(EXTENSION_SVG);
-	ofstream	fichier_recent(mostRecent.c_str());
-	fichier_recent << m_nameFile;
+	return output.str();
 }
 
+void Network::UpdateIdReseau()
+{
+	sqlite3 *	db;
+	char *		zErrMsg = 0;
+	int			rc;
+	string		sql;
+	int id = 0;
+	int *data (&id);
+
+	// Open database
+	rc = sqlite3_open(NAME_DATABASE, &db);
+	if ( rc )	//ERRORS
+
+		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+
+	// Create SQL statement
+	sql = "SELECT ID_RESEAU from svg order by ID_RESEAU desc limit 1";
+
+	// Execute SQL statement
+	rc	= sqlite3_exec(db, sql.c_str(), callbackUpdateIdReseau, (void*)this, &zErrMsg);
+
+	if( rc != SQLITE_OK )
+	{
+		fprintf(stderr, "SQL error: %s\n", zErrMsg);
+		sqlite3_free(zErrMsg);
+	}
+
+	sqlite3_close(db);
+
+}
+
+void Network::setIdReseau(int id)
+{
+	m_idReseau = id;
+}
+
+bool Network::save()
+{
+	sqlite3 *	db;
+	char *		zErrMsg = 0;
+	int			rc;
+	ostringstream	instruction;
+
+	// On ouvre la database
+	rc = sqlite3_open(NAME_DATABASE, &db);
+
+	if ( rc )	// ERRORS
+	{
+		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+		return false;
+	}
+
+	// Create sql statement
+	instruction << "INSERT INTO svg(ID_RESEAU, GEOMETRY, SAUVEGARDE) VALUES ( ";
+	instruction << m_idReseau << ", '" << m_geometry << "', '" << getWeightStr() << "' );";
+
+	//execute sql statement
+	rc	= sqlite3_exec(db, instruction.str().c_str(), callbin, 0, &zErrMsg);
+	if ( rc != SQLITE_OK )	// ERRORS
+	{
+		fprintf(stderr, "SQL error: %s\n", zErrMsg);
+		sqlite3_free(zErrMsg);
+		return false;
+	}
+
+	// on sort
+	sqlite3_close(db);
+
+	return true;
+}
+/*
+   void Network::savebis()
+   {
+    // On trouve le nom du fichier
+    time_t			t = time(0);							// l'heure
+    ostringstream	temps;									//flux pour traitement
+
+    temps << asctime(localtime(&t));						//on récupère le flux correspondant au temps
+    string			str_nom_fichier(temps.str());			// on crée un string correspondant au flux
+    for (int i(0); i < (int)str_nom_fichier.size(); i++)	// on parcourt le nom du fichier
+        if (!isalnum(str_nom_fichier[i]))					// et on remplace tout ce qui ne va pas dans un nom de fichier par '_'
+            str_nom_fichier[i] = '_';
+    str_nom_fichier = string(DOSSIER_SVG) + str_nom_fichier + string(EXTENSION_SVG);
+    // adresse complete
+    strcpy(m_nameFile, str_nom_fichier.c_str());
+
+    //on écrit dans le fichier
+    ofstream	file(m_nameFile);										// flux sortant dans le fichier
+    file << getTotalLayerNumber() << ' ';								// on entre le nombre total de couches
+    Layer *		layer(getFirstLayer());									// on initialise la premiere couche
+    file << layer->getSize() << ' ';									// en donnant sa longueur
+    Neuron *	neurone;
+    while (layer->getNextLayer() != 0)									//pour toute couche
+    {
+        layer = layer->getNextLayer();									// on prend la suivante
+        file << endl << layer->getSize() << ' ';						// on donne sa taille
+        for (int i(0); i < layer->getSize(); i++)						// pour tout neurone de la couche
+        {
+            neurone = layer->getNeuron(i);								// on récupère le neurone
+            for (int j(0); j < neurone->getBindingsNumber(); j++)		// pour toute liaison de la couche précédente vers ce neurone
+                file << neurone->getBinding(j)->getWeight() << ' ';		// on ajoute au fichier le poids de la liaison
+            file << ',';												//séparateur
+        }
+    }
+
+    // on sauvegarde le dernier fichier enregistré dans mostRecent.txt :
+    string		mostRecent;
+    mostRecent = DOSSIER_SVG + string(NOM_SVG) + string(EXTENSION_SVG);
+    ofstream	fichier_recent(mostRecent.c_str());
+    fichier_recent << m_nameFile;
+   }
+ */
 void Network::setMomentum(double momentum)
 {
 	m_momentum = momentum;
@@ -221,7 +313,7 @@ double Network::getMomentum()
 {
 	return m_momentum;
 }
-
+/*
 void Network::recuperateur()
 {
 	ifstream	file(m_nameFile);	// On ouvre le fichier
@@ -263,21 +355,36 @@ void Network::recuperateur()
 		file >> lengthLayer;// on lit la longueur de la prochaine couche
 	}
 }
+*/
 
 void Network::getMostRecent()
 {
-	//initialisations
-	string	str_nom_fichier;
-	string	nom_db;
+	sqlite3 *	db;
+	char *		zErrMsg = 0;
+	int			rc;
+	string		sql;
+	string weight_str;
 
-	//on reconstitue le nom du fichier :
-	nom_db = string(DOSSIER_SVG) + NOM_SVG + string(EXTENSION_SVG);
+	// Open database
+	rc = sqlite3_open(NAME_DATABASE, &db);
+	if ( rc )	//ERRORS
+		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
 
-	ifstream file(nom_db.c_str());	//on ouvre le fichier getMostRecent.txt
-	file >> str_nom_fichier;		//on lit son contenu
-	strcpy(m_nameFile, str_nom_fichier.c_str());
-	cout << "Reseau : recuperation de : " << str_nom_fichier << endl;
-	recuperateur();	// On récupère le réseau stocké dans le fichier de svg le plus récent
+	// Create SQL statement
+	sql = "SELECT SAUVEGARDE,ID_RESEAU from svg order by ID_RESEAU desc limit 1";
+
+	// Execute SQL statement
+	rc	= sqlite3_exec(db, sql.c_str(), callbackGetMostRecent, (void*)this, &zErrMsg);
+
+	if( rc != SQLITE_OK )
+	{
+		fprintf(stderr, "SQL error: %s\n", zErrMsg);
+		sqlite3_free(zErrMsg);
+	}
+	else
+		cout << "Reussite" << endl;
+
+	sqlite3_close(db);
 }
 
 double Network::getMaximalDistance()
@@ -298,6 +405,23 @@ void Network::setMaxLimitLoop(int maxLimitLoop)
 	m_maxLimitLoop = maxLimitLoop;
 }
 
+void Network::setWeight(string weightStr)
+{
+	istringstream input(weightStr);
+	Layer* layer(getFirstLayer());
+	double weight;
+	for (int i = 1; i < getTotalLayerNumber(); ++i)
+	{
+		layer = layer->getNextLayer();
+		for (int j = 0; j < layer->getSize(); ++j)
+			for (int k = 0; k < layer->getNeuron(j)->getBindingsNumber(); ++k)
+			{
+				input >> weight ;
+				layer->getNeuron(j)->getBinding(k)->setWeight(weight);
+			}
+	}
+}
+
 ////////////////////// NETWORKLETTER //////////////////////
 
 NetworkLetter::NetworkLetter() :
@@ -314,61 +438,67 @@ NetworkLetter::~NetworkLetter()
 {
 }
 
-void NetworkLetter::save()
+bool NetworkLetter::save()
 {
-	// On trouve le nom du fichier
-	time_t			t = time(0);							// l'heure
-	ostringstream	temps;									//flux pour traitement
+	sqlite3 *	db;
+	char *		zErrMsg = 0;
+	int			rc;
+	ostringstream	instruction;
 
-	temps << asctime(localtime(&t));						//on récupère le flux correspondant au temps
-	string			str_nom_fichier(temps.str());			// on crée un string correspondant au flux
-	for (int i(0); i < (int)str_nom_fichier.size(); i++)	// on parcourt le nom du fichier
-		if (!isalnum(str_nom_fichier[i]))					// et on remplace tout ce qui ne va pas dans un nom de fichier par '_'
-			str_nom_fichier[i] = '_';
-	str_nom_fichier = string(DOSSIER_SVG) + str_nom_fichier + "_" + m_testedLetter + string(EXTENSION_SVG);
-	// adresse complete
-	strcpy(m_nameFile, str_nom_fichier.c_str());
+	// On ouvre la database
+	rc = sqlite3_open(NAME_DATABASE, &db);
 
-	//on écrit dans le fichier
-	ofstream	file(m_nameFile);										// flux sortant dans le fichier
-	file << getTotalLayerNumber() << ' ';								// on entre le nombre total de couches
-	Layer *		layer(getFirstLayer());									// on initialise la premiere couche
-	file << layer->getSize() << ' ';									// en donnant sa longueur
-	Neuron *	neurone;
-	while (layer->getNextLayer() != 0)									//pour toute couche
+	if ( rc )	// ERRORS
 	{
-		layer = layer->getNextLayer();									// on prend la suivante
-		file << endl << layer->getSize() << ' ';						// on donne sa taille
-		for (int i(0); i < layer->getSize(); i++)						// pour tout neurone de la couche
-		{
-			neurone = layer->getNeuron(i);								// on récupère le neurone
-			for (int j(0); j < neurone->getBindingsNumber(); j++)		// pour toute liaison de la couche précédente vers ce neurone
-				file << neurone->getBinding(j)->getWeight() << ' ';		// on ajoute au fichier le poids de la liaison
-			file << ',';												//séparateur
-		}
+		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+		return false;
 	}
 
-	// on sauvegarde le dernier fichier enregistré dans mostRecent.txt :
-	string		mostRecent;
-	mostRecent = DOSSIER_SVG + string(NOM_SVG) + m_testedLetter + string(EXTENSION_SVG);
-	ofstream	fichier_recent(mostRecent.c_str());
-	fichier_recent << m_nameFile;
+	// Create sql statement
+	instruction << "INSERT INTO svg(ID_RESEAU, GEOMETRY, SAUVEGARDE, TESTED_LETTER) VALUES ( ";
+	instruction << m_idReseau << ", '" << m_geometry << "', '" << getWeightStr() << "' , '" << m_testedLetter << "' );";
+
+	//execute sql statement
+	rc = sqlite3_exec(db, instruction.str().c_str(), callbin, 0, &zErrMsg);
+	if ( rc != SQLITE_OK )	// ERRORS
+	{
+		fprintf(stderr, "SQL error: %s\n", zErrMsg);
+		sqlite3_free(zErrMsg);
+		return false;
+	}
+
+	sqlite3_close(db);
+
+	return true;
 }
 
 void NetworkLetter::getMostRecent()
 {
-	//initialisations
-	string	str_nom_fichier;
-	string	nom_db;
+	sqlite3 *	db;
+	char *		zErrMsg = 0;
+	int			rc;
+	ostringstream		sql;
+	string weight_str;
 
-	//on reconstitue le nom du fichier :
-	nom_db = string(DOSSIER_SVG) + NOM_SVG + m_testedLetter + string(EXTENSION_SVG);
+	// Open database
+	rc = sqlite3_open(NAME_DATABASE, &db);
+	if ( rc )	//ERRORS
+		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
 
-	ifstream file(nom_db.c_str());	//on ouvre le fichier getMostRecent.txt
-	file >> str_nom_fichier;		//on lit son contenu
-	strcpy(m_nameFile, str_nom_fichier.c_str());
-	cout << "Reseau " << m_testedLetter << " - recuperation de : " << str_nom_fichier << endl;
-	recuperateur();	// On récupère le réseau stocké dans le fichier de svg le plus récent
+	// Create SQL statement
+	sql << "SELECT SAUVEGARDE,ID_RESEAU from svg WHERE TESTED_LETTER ='" << m_testedLetter << "' order by ID_RESEAU desc limit 1";
+
+	// Execute SQL statement
+	rc	= sqlite3_exec(db, sql.str().c_str(), callbackGetMostRecent, (void*)this, &zErrMsg);
+
+	// ERRORS
+	if( rc != SQLITE_OK )
+	{
+		fprintf(stderr, "SQL error: %s\n", zErrMsg);
+		sqlite3_free(zErrMsg);
+	}
+
+	sqlite3_close(db);
 }
 
 void NetworkLetter::writeReport(bool resultat, int count, double distance_moyenne, double temps_mis, string commentaires)
@@ -568,4 +698,22 @@ double distanceMod(double* data1, double* data2, int length)
 	res /= length * 2;											// on moyenne
 
 	return res;
+}
+
+static int callbin(void *data, int argc, char **argv, char **azColName)
+{
+	return 0;
+}
+static int callbackUpdateIdReseau(void *data, int argc, char **argv, char **azColName)
+{
+	Network* net = (Network*) data;
+	net->setIdReseau(atoi(argv[0])+1);
+	return 0;
+}
+static int callbackGetMostRecent(void *data, int argc, char **argv, char **azColName)
+{
+	Network* net= (Network*)data;
+	net->setWeight(string(argv[0]));
+	net->setIdReseau(atoi(argv[1]));
+	return 0;
 }

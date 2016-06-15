@@ -9,8 +9,8 @@ void scriptFile(ifstream &input)
 	int					compteur(0);
 
 
-	while (getline(input,cmdName))
-		if (cmdName.size() && cmdName[0]!='#')
+	while (getline(input, cmdName))
+		if (cmdName.size() && cmdName[0] != '#')
 			cmdsVect.push_back(cmdName);
 
 	string cmds[cmdsVect.size()];
@@ -27,8 +27,8 @@ void scriptFile(ifstream &input)
 void commands(int nbCmds, string cmds[])
 {
 	int				length_alphabet = getLenghtAlphabet();
-	string geometry = GEOMETRY;
-	string bin;
+	string			geometry		= GEOMETRY;
+	string			bin;
 	NetworkArray*	tablo_net		= new NetworkArray(length_alphabet);
 
 	for (int i = 0; i < nbCmds; ++i)
@@ -65,7 +65,7 @@ void commands(int nbCmds, string cmds[])
 			cout << tablo_net->testAll() << endl;
 		}
 
-		else if (cmds[i].substr(0,8) == "geometry")
+		else if (cmds[i].substr(0, 8) == "geometry")
 		{
 			istringstream line(cmds[i]);
 			line >> bin;
@@ -74,7 +74,7 @@ void commands(int nbCmds, string cmds[])
 			cout << "geometry changes to : " << geometry << endl;
 		}
 
-		else if (cmds[i].substr(0,15) == "length_alphabet")
+		else if (cmds[i].substr(0, 15) == "length_alphabet")
 		{
 			istringstream line(cmds[i]);
 			line >> bin;
@@ -114,3 +114,6 @@ int getLenghtAlphabet()
 	}
 	return cmdValue;
 }
+
+
+//CREATE TABLE svg(Id INTEGER PRIMARY KEY, ID_RESEAU INTEGER not null, GEOMETRY varchar not null, SAUVEGARDE varchar not null, TESTED_LETTER char(1) not null);

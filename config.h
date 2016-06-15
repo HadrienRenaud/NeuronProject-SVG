@@ -19,6 +19,8 @@
 #include <iomanip>
 #include <algorithm>
 #include <stdexcept>
+#include <sqlite3.h>
+#include <functional>
 
 #define THRESHOLD						0
 //! demi-pente de la sigmoide à l'origine
@@ -80,6 +82,7 @@
 #define NOM_SVG							"plus_recent_"
 //! L'extension dediee aux sauvegardes reseau
 #define EXTENSION_SVG					".svg_reseau"
+#define NAME_DATABASE					"Reseaux.sqlite"
 #define GEOMETRY						"4 400 100 10 1"
 
 

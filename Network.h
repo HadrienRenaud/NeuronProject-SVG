@@ -3,6 +3,8 @@
 
 #include "config.h"
 
+using namespace std;
+
 class Layer;//on dit qu'on va utiliser la classe layer
 //! Classe Reseau de neurones
 /*! Contient sa premiere couche, les methodes et tous les parametres necessaire */
@@ -57,17 +59,23 @@ public:
 	//! Algorithme d'apprentissage (tout initialise)
 	bool	learn();
 
+	//! Retourne le string des poids
+	string	getWeightStr();
+
+	//! Actualise l'id_reseau
+	void	UpdateIdReseau();
+
+	//! Set l'id_reseau
+	void	setIdReseau(int id);
+
 	//! Sauver l'etat du réseau
-	void	save();
+	bool	save();
 
 	//! Fixe le moment d'inertie à momentum
 	void	setMomentum(double momentum);
 
 	//! Retourne le moment d'inertie du reseau
 	double	getMomentum();
-
-	//! Fonction appelée pour récupérer à partir d'un fichier
-	void	recuperateur();
 
 	//! Actualise le réseau
 	void	getMostRecent();
@@ -83,6 +91,10 @@ public:
 
 	//! Fixe le nombre maximal de boucles d'apprentissage a effectuer par le reseau
 	void	setMaxLimitLoop(int maxLimitLoop);
+
+	//! Fixe les poids du réseau
+	void setWeight(string weigths);
+
 protected:
 
 	//! Pointeur vers la premiere couche
@@ -119,6 +131,8 @@ protected:
 	//! Nombre de couches dans le réseau
 	int		m_nbLayers;
 
+	//! Id du reseau dans la database
+	int		m_idReseau;
 };
 
 class NetworkLetter :
@@ -141,7 +155,7 @@ public:
 	~NetworkLetter();
 
 	//! Sauver l'etat du réseau
-	void	save();
+	bool	save();
 
 	//! Actualise le réseau
 	void	getMostRecent();
@@ -165,7 +179,6 @@ public:
 	//! Fixe la lettre testee par le reseau
 	void	setLettreTestee(char lettre_testee);
 
-
 protected:
 
 	//! Lettre testee par le neurone
@@ -187,6 +200,10 @@ double	distance(double* data1, double* data2, int length);
 //! Calcul d'écart, modulo 26 : la casse n'est pas prise en compte
 double	distanceMod(double* data1, double* data2, int length);
 
+//! Fonctions de retour de la lecture de base de donnees.
+static int callbin(void *data, int argc, char **argv, char **azColName);
+static int callbackUpdateIdReseau(void *data, int argc, char **argv, char **azColName);
+static int callbackGetMostRecent(void *data, int argc, char **argv, char **azColName);
 
 
 

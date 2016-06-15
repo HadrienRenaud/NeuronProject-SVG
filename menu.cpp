@@ -84,7 +84,7 @@ void menu(SDL_Renderer *ren)
 	cout << "Recuperation des " << length_alphabet << " reseaux ... " << flush;
 	NetworkArray* tablo_net = new NetworkArray(length_alphabet);
 
-	// tablo_net->getMostRecent();
+	tablo_net->getMostRecent();
 	cout << "Reseaux recuperes." << endl;
 
 	double input[FIRST_LAYER_SIZE];
